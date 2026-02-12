@@ -1,0 +1,94 @@
+PROPRIETARY SOFTWARE LICENSE
+
+Copyright (c) 2024-2026 TD3, built by Grayson Graham. All rights reserved.
+
+NOTICE: This is proprietary software. This license governs all use of the
+Software and its associated documentation, source code, data models, AI
+prompts, workflows, and design assets (collectively, the "Software").
+
+1. OWNERSHIP
+
+   The Software is the exclusive property of Grayson Graham ("Owner"). All
+   intellectual property rights, including but not limited to copyrights,
+   trade secrets, patents, trademarks, and any other proprietary rights in
+   the Software, are and shall remain the sole property of the Owner.
+
+2. RESTRICTIONS
+
+   Unless the Owner provides explicit, written authorization, you may NOT:
+
+   a. Copy, reproduce, or duplicate any part of the Software;
+   b. Modify, adapt, translate, or create derivative works based on the
+      Software;
+   c. Distribute, sublicense, lease, rent, sell, or otherwise transfer the
+      Software or any rights therein to any third party;
+   d. Reverse engineer, decompile, disassemble, or otherwise attempt to
+      derive the source code, algorithms, data structures, or underlying
+      ideas of the Software;
+   e. Remove, alter, or obscure any copyright notices, proprietary legends,
+      or other notices contained in or on the Software;
+   f. Use the Software, in whole or in part, to build or contribute to a
+      competing product or service;
+   g. Use the Software for any unlawful purpose or in violation of any
+      applicable laws or regulations.
+
+3. SCOPE
+
+   This license applies to all components of the Software, including but
+   not limited to:
+
+   - Application source code (frontend and backend)
+   - Database schemas, migrations, and row-level security policies
+   - AI processing workflows, prompts, and model configurations
+   - Design system specifications, tokens, and component patterns
+   - Financial calculation algorithms and business logic
+   - Cost code classification system and category structure
+   - Documentation, diagrams, and technical specifications
+   - Build configurations, deployment scripts, and infrastructure code
+
+4. PUBLIC REPOSITORY NOTICE
+
+   The availability of this Software in a public source code repository
+   does NOT constitute a grant of license, permission, or right to use,
+   copy, modify, or distribute the Software. Public visibility is provided
+   solely for transparency and portfolio demonstration purposes. All rights
+   remain reserved under this license.
+
+5. CONFIDENTIALITY
+
+   Any non-public information obtained through access to this Software,
+   including but not limited to database structures, API endpoints, business
+   logic, financial formulas, and integration details, shall be treated as
+   confidential information of the Owner.
+
+6. DISCLAIMER OF WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+   IN NO EVENT SHALL THE OWNER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING
+   FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
+
+7. TERMINATION
+
+   Any unauthorized use of the Software automatically terminates any
+   implied or explicit permission granted under this license. Upon
+   termination, you must immediately cease all use of the Software and
+   destroy any copies in your possession.
+
+8. GOVERNING LAW
+
+   This license shall be governed by and construed in accordance with the
+   laws of the State of Oregon, United States, without regard to its
+   conflict of law provisions.
+
+9. CONTACT
+
+   For licensing inquiries, permissions, or questions:
+
+   Grayson Graham
+   grysngrhm@gmail.com
+
+TD3 -- Construction loan management, built by Grayson Graham.
