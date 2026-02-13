@@ -8,6 +8,19 @@ For business context and a high-level workflow overview, see the [README](../REA
 
 ---
 
+## Table of Contents
+
+1. [Overview](#overview)
+2. [System Architecture](#system-architecture)
+3. [Core Platform](#core-platform)
+4. [AI Integration](#ai-integration)
+5. [Security Model](#security-model)
+6. [Data Architecture](#data-architecture)
+7. [Deployment](#deployment)
+8. [Related Documentation](#related-documentation)
+
+---
+
 ## System Architecture
 
 ```mermaid
@@ -170,17 +183,7 @@ For the full AI reference---including model selection rationale, confidence thre
 
 ## Security Model
 
-- **Passwordless authentication** via one-time codes sent to email, eliminating password-related vulnerabilities
-- **Pre-authorized access list** controls who can sign in -- only approved email addresses are accepted
-- **Four stackable permissions** control what authenticated users can do:
-  - Process loans (create, edit, delete business records)
-  - Fund draws (transition draws and wire batches to funded status)
-  - Approve payoffs (authorize payoff statements before sending to title companies)
-  - Manage users (administer access list and permissions)
-- **Row-level database security** enforces access rules at the data layer, independent of the application
-- **Complete audit trail** records every action with timestamps and user attribution
-- **Immutable historical records** prevent modification of funded draws and completed transactions
-- **Webhook authentication** uses cryptographic verification with fail-closed semantics
+TD3's comprehensive security architecture is documented in the dedicated [Security](SECURITY.md) guide, covering authentication, the four-capability permission model, data-level enforcement, audit trail, AI security guardrails, and infrastructure security.
 
 The interface adapts to each user's permission set---controls and actions that a user cannot perform are hidden rather than disabled, keeping the experience clean and focused. For details on role-adaptive design patterns, see the [Design Language: Polymorphic Behaviors](DESIGN_LANGUAGE.md#7-polymorphic-behaviors).
 
@@ -214,10 +217,12 @@ All user actions flow through a **permissions system** that enforces role-based 
 
 | Document | Contents |
 |----------|----------|
-| [README](../README.md) | Business context, workflow overview, and why TD3 exists |
-| [Artificial Intelligence](ARTIFICIAL_INTELLIGENCE.md) | AI capabilities: budget categorization, invoice extraction, invoice matching, confidence systems, and training data |
-| [Design Language](DESIGN_LANGUAGE.md) | Visual design tokens, color system, typography, spacing, polymorphic UI behaviors |
-| [Development Roadmap](ROADMAP.md) | Upcoming features including DocuSign integration, portfolio intelligence, and predictive analytics |
+| [README](../README.md) | Project overview, workflow summary, and documentation index |
+| [Artificial Intelligence](ARTIFICIAL_INTELLIGENCE.md) | AI pipeline, cost code system, confidence model, and training data |
+| [Security](SECURITY.md) | Authentication, permissions, data-level enforcement, and audit trail |
+| [Design Language](DESIGN_LANGUAGE.md) | Design philosophy, color system, polymorphic behaviors, and accessibility |
+| [Glossary](GLOSSARY.md) | Definitions of key construction lending, financial, and platform terms |
+| [Development Roadmap](ROADMAP.md) | Upcoming features, timeline, and development priorities |
 
 ---
 

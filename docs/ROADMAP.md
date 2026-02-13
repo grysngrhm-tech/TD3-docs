@@ -4,6 +4,16 @@
 
 ---
 
+## Table of Contents
+
+1. [Platform Status](#platform-status)
+2. [Upcoming Features](#upcoming-features)
+3. [AI Intelligence](#ai-intelligence)
+4. [Feature Timeline](#feature-timeline)
+5. [Related Documentation](#related-documentation)
+
+---
+
 ## Platform Status
 
 TD3's core platform is live and operational:
@@ -76,7 +86,7 @@ Enable workflow notifications and approvals directly within the team's existing 
 
 **Why self-service matters:** Builders and lenders currently rely on phone calls, emails, and manual report generation to get updates on their loans. Every "what's the status of my draw?" inquiry requires a processor to look up the information and relay it---a pattern that scales linearly with portfolio size. Self-service portals eliminate this overhead by giving external stakeholders real-time visibility into their own data, reducing support requests and freeing the internal team to focus on processing work.
 
-Provide external stakeholders with secure, limited-access views into their relevant data. Both portals build on TD3's existing [security model](ARCHITECTURE.md#security-model) and [role-based UI adaptations](DESIGN_LANGUAGE.md#75-role-based-adaptations-future).
+Provide external stakeholders with secure, limited-access views into their relevant data. Both portals build on TD3's existing [security model](SECURITY.md) and [role-based UI adaptations](DESIGN_LANGUAGE.md#75-role-based-adaptations-future).
 
 **Builder Portal:**
 - View their own loans and current balances
@@ -224,10 +234,12 @@ gantt
 
 | Document | Contents |
 |----------|----------|
-| [Artificial Intelligence](ARTIFICIAL_INTELLIGENCE.md) | AI capabilities, cost code system, invoice extraction and matching, training data, confidence model |
-| [Technical Architecture](ARCHITECTURE.md) | System architecture, data flow, security model, deployment infrastructure |
-| [Design Language](DESIGN_LANGUAGE.md) | Visual design tokens, color system, typography, component specifications, polymorphic behaviors |
-| [README](../README.md) | Platform overview, business context, and documentation index |
+| [Artificial Intelligence](ARTIFICIAL_INTELLIGENCE.md) | AI pipeline, cost code system, confidence model, and training data |
+| [Technical Architecture](ARCHITECTURE.md) | System architecture, data model, and deployment |
+| [Security](SECURITY.md) | Authentication, permissions, data-level enforcement, and audit trail |
+| [Design Language](DESIGN_LANGUAGE.md) | Design philosophy, color system, polymorphic behaviors, and accessibility |
+| [Glossary](GLOSSARY.md) | Definitions of key construction lending, financial, and platform terms |
+| [README](../README.md) | Project overview, workflow summary, and documentation index |
 
 ---
 

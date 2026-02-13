@@ -6,6 +6,19 @@ The guiding principle is straightforward: **AI handles pattern matching and data
 
 ---
 
+## Table of Contents
+
+1. [TD3's Standardized Cost Code System](#td3s-standardized-cost-code-system)
+2. [Budget Standardization](#budget-standardization)
+3. [Invoice Data Extraction](#invoice-data-extraction)
+4. [Invoice-to-Budget Matching](#invoice-to-budget-matching)
+5. [Training Data and the Path to Self-Improvement](#training-data-and-the-path-to-self-improvement)
+6. [Confidence and Trust](#confidence-and-trust)
+7. [AI Models: Selection Rationale](#ai-models-selection-rationale)
+8. [Related Documentation](#related-documentation)
+
+---
+
 ## TD3's Standardized Cost Code System
 
 Effective AI depends on structured data---and in construction finance, that starts with a universal language for costs.
@@ -301,7 +314,7 @@ Every AI decision, human review, and correction is permanently recorded. The aud
 2. **Accountability** --- Every match can be attributed to either an AI decision or a specific human reviewer.
 3. **Improvement** --- The historical record provides the data needed to calibrate confidence thresholds, identify systematic AI errors, and measure accuracy improvements over time.
 
-For details on how the audit trail integrates with the broader security model, see [Technical Architecture: Security Model](ARCHITECTURE.md#security-model).
+For details on how the audit trail integrates with the broader security model, see [Security](SECURITY.md).
 
 ### Why Three Layers Matter
 
@@ -331,12 +344,14 @@ The model selection reflects a deliberate cost-accuracy tradeoff: the most capab
 
 ## Related Documentation
 
-| Document | Relevance |
-|----------|-----------|
-| [Technical Architecture](ARCHITECTURE.md) | System architecture, data flow, security model, and how AI integrates with the broader platform |
-| [Development Roadmap](ROADMAP.md) | Upcoming features including Portfolio Intelligence (RAG chatbot) and predictive analytics |
-| [Design Language](DESIGN_LANGUAGE.md) | Confidence color coding, status-driven styling, and polymorphic UI behaviors |
-| [README](../README.md) | Business context, workflow overview, and why TD3 exists |
+| Document | Contents |
+|----------|----------|
+| [Technical Architecture](ARCHITECTURE.md) | System architecture, data model, and deployment |
+| [Security](SECURITY.md) | Authentication, permissions, data-level enforcement, and audit trail |
+| [Development Roadmap](ROADMAP.md) | Upcoming features, timeline, and development priorities |
+| [Design Language](DESIGN_LANGUAGE.md) | Design philosophy, color system, polymorphic behaviors, and accessibility |
+| [Glossary](GLOSSARY.md) | Definitions of key construction lending, financial, and platform terms |
+| [README](../README.md) | Project overview, workflow summary, and documentation index |
 
 ---
 

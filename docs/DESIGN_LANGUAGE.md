@@ -13,9 +13,7 @@
 5. [Elevation & Shadows](#5-elevation--shadows)
 6. [Motion & Animation](#6-motion--animation)
 7. [Polymorphic Behaviors](#7-polymorphic-behaviors)
-8. [Component Specifications](#8-component-specifications)
-9. [Accessibility](#9-accessibility)
-10. [Implementation Guide](#10-implementation-guide)
+8. [Accessibility](#8-accessibility)
 
 ---
 
@@ -70,7 +68,7 @@ TD3's brand is anchored in a **Dark Red/Maroon** accent that conveys:
 
 Based on `#950606` with accessibility-optimized variants.
 
-**Note:** The CSS default (`:root`) is dark mode; light mode is applied via the `.light` class. The accent-500 value (`#950606`) is consistent across both modes.
+The CSS default (`:root`) is dark mode; light mode is applied via the `.light` class. The accent-500 value (`#950606`) is consistent across both modes.
 
 | Token | Light Mode (`.light`) | Dark Mode (`:root`) | Usage |
 |-------|------------|-----------|-------|
@@ -85,7 +83,8 @@ Based on `#950606` with accessibility-optimized variants.
 | `--accent-800` | `#530303` | `#D83232` | High contrast text |
 | `--accent-900` | `#320202` | `#E85050` | Maximum contrast |
 
-**Additional accent utilities** (defined in CSS):
+#### Accent Utility Tokens
+
 | Token | Light Mode | Dark Mode | Usage |
 |-------|------------|-----------|-------|
 | `--accent` | `var(--accent-500)` | `var(--accent-500)` | Shorthand alias |
@@ -195,16 +194,7 @@ The interface tints based on workflow status:
 
 ### 3.1 Font Stack
 
-```css
-/* Primary - UI Text */
---font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-
-/* Monospace - Numbers, Code */
---font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, monospace;
-
-/* Display - Optional for large headlines */
---font-display: 'Inter', var(--font-primary);
-```
+TD3 uses **Inter** as the primary UI typeface and **JetBrains Mono** for monospaced content (financial figures, code). A display alias maps to Inter for large headlines.
 
 **Why Inter?**
 - Designed specifically for computer screens
@@ -239,15 +229,7 @@ Based on a **1.25 ratio** (Major Third) with 16px base:
 
 ### 3.4 Numeric Typography
 
-Financial data uses **tabular figures** for alignment:
-
-```css
-.financial-value {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum' on;
-}
-```
+Financial data uses **tabular figures** for column alignment. The monospace font stack (JetBrains Mono) is applied alongside `font-variant-numeric: tabular-nums` to ensure equal-width digits, keeping currency columns perfectly aligned regardless of digit composition.
 
 ---
 
@@ -337,19 +319,15 @@ Material Design-inspired depth system:
 
 ### 5.3 Glow Effects
 
-Glow effects are constructed using the semantic `--*-glow` tokens rather than standalone custom properties. Each semantic color provides a glow variant:
+Glow effects are constructed using the semantic color tokens. Each semantic color provides a glow variant used for focus rings and interactive emphasis:
 
-```css
-/* Accent glow - used in button hover, card interactive hover */
---accent-glow: rgba(149, 6, 6, 0.2);     /* Light mode */
---accent-glow: rgba(149, 6, 6, 0.35);    /* Dark mode */
-
-/* Semantic glow tokens */
---success-glow: rgba(5, 150, 105, 0.2);  /* Light */ / rgba(5, 150, 105, 0.25);  /* Dark */
---error-glow: rgba(220, 38, 38, 0.2);    /* Light */ / rgba(220, 38, 38, 0.25);  /* Dark */
---warning-glow: rgba(217, 119, 6, 0.2);  /* Light */ / rgba(217, 119, 6, 0.25);  /* Dark */
---info-glow: rgba(37, 99, 235, 0.2);     /* Light */ / rgba(37, 99, 235, 0.25);  /* Dark */
-```
+| Glow Token | Light Mode | Dark Mode | Usage |
+|------------|------------|-----------|-------|
+| `--accent-glow` | `rgba(149, 6, 6, 0.2)` | `rgba(149, 6, 6, 0.35)` | Button hover, card interactive hover |
+| `--success-glow` | `rgba(5, 150, 105, 0.2)` | `rgba(5, 150, 105, 0.25)` | Success focus rings |
+| `--error-glow` | `rgba(220, 38, 38, 0.2)` | `rgba(220, 38, 38, 0.25)` | Error focus rings |
+| `--warning-glow` | `rgba(217, 119, 6, 0.2)` | `rgba(217, 119, 6, 0.25)` | Warning focus rings |
+| `--info-glow` | `rgba(37, 99, 235, 0.2)` | `rgba(37, 99, 235, 0.25)` | Info focus rings |
 
 ### 5.4 Surface Treatments
 
@@ -368,22 +346,13 @@ Glow effects are constructed using the semantic `--*-glow` tokens rather than st
 
 ### 6.1 Timing Functions
 
-```css
-/* Standard - Most transitions */
---ease-default: cubic-bezier(0.4, 0, 0.2, 1);
-
-/* Decelerate - Elements entering */
---ease-out: cubic-bezier(0, 0, 0.2, 1);
-
-/* Accelerate - Elements exiting */
---ease-in: cubic-bezier(0.4, 0, 1, 1);
-
-/* Overshoot - Playful feedback */
---ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-
-/* Bounce - Success states */
---ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-```
+| Token | Curve | Description | Usage |
+|-------|-------|-------------|-------|
+| `--ease-default` | `cubic-bezier(0.4, 0, 0.2, 1)` | Standard deceleration curve | Most transitions |
+| `--ease-out` | `cubic-bezier(0, 0, 0.2, 1)` | Fast start, gentle stop | Elements entering the viewport |
+| `--ease-in` | `cubic-bezier(0.4, 0, 1, 1)` | Gentle start, fast finish | Elements exiting the viewport |
+| `--ease-spring` | `cubic-bezier(0.34, 1.56, 0.64, 1)` | Overshoot with settle | Playful feedback (buttons, toggles) |
+| `--ease-bounce` | `cubic-bezier(0.68, -0.55, 0.265, 1.55)` | Bounce at both ends | Success states, celebrations |
 
 ### 6.2 Duration Scale
 
@@ -400,98 +369,25 @@ Glow effects are constructed using the semantic `--*-glow` tokens rather than st
 
 #### Micro-interactions
 
-```css
-/* Button press */
-.btn:active {
-  transform: scale(0.97);
-  transition: transform var(--duration-fast) var(--ease-spring);
-}
-
-/* Hover lift */
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--elevation-3);
-  transition: all var(--duration-normal) var(--ease-out);
-}
-```
+- **Button press** — Buttons scale down slightly (to 97%) on press using the spring timing function, providing tactile feedback that the action registered.
+- **Hover lift** — Cards translate upward by 2px on hover, with shadow deepening from elevation-2 to elevation-3, creating a "pick up" effect using the decelerate curve.
 
 #### State Transitions
 
-```css
-/* Fade in */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* Scale in */
-@keyframes scaleIn {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-/* Slide up */
-@keyframes slideUp {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-/* Shake (error) */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-4px); }
-  40%, 80% { transform: translateX(4px); }
-}
-```
+- **Fade in** — Elements transition from fully transparent to opaque. Used for content appearing in place.
+- **Scale in** — Elements grow from 95% to full size while fading in. Used for modals, popovers, and dropdowns entering the viewport.
+- **Slide up** — Elements translate upward 10px while fading in. Used for list items, cards, and staggered content loads.
+- **Shake** — A horizontal oscillation of 4px left and right, repeating over 5 keyframes. Used for form validation errors to draw attention to the problem field.
 
 #### Loading States
 
-```css
-/* Skeleton shimmer */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--bg-secondary) 25%,
-    var(--bg-hover) 50%,
-    var(--bg-secondary) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-/* Pulse */
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-/* Spinner */
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-```
+- **Skeleton shimmer** — A gradient slides across the placeholder surface using a 200% background-size animation over 1.5 seconds, creating a "scanning" effect that indicates content is loading.
+- **Pulse** — Opacity oscillates between 100% and 50% to indicate an ongoing background process.
+- **Spinner** — A continuous 360-degree rotation for determinate or indeterminate loading indicators.
 
 ### 6.4 Reduced Motion
 
-Always respect user preferences:
-
-```css
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-```
+TD3 respects the `prefers-reduced-motion` media query. When a user has requested reduced motion at the OS level, all animation durations and transition durations are effectively zeroed out so that state changes are instantaneous without visual motion.
 
 ---
 
@@ -567,393 +463,9 @@ See the [Roadmap](ROADMAP.md#builder--lender-portals) for upcoming role-specific
 
 ---
 
-## 8. Component Specifications
+## 8. Accessibility
 
-Every interactive component in TD3 follows a consistent state lifecycle. The transitions between states use the motion tokens defined in Section 6:
-
-```mermaid
-stateDiagram-v2
-    [*] --> Rest
-    Rest --> Hover : mouse enter
-    Hover --> Rest : mouse leave
-    Hover --> Focus : tab / click
-    Focus --> Active : click / enter
-    Active --> Loading : async action
-    Loading --> Success : resolved
-    Loading --> Error : rejected
-    Success --> Rest : duration-slow
-    Error --> Rest : duration-slow
-    Rest --> Disabled : disabled prop
-    Disabled --> Rest : enabled
-
-    note right of Hover
-        Rest → Hover: duration-fast, ease-default
-    end note
-    note right of Loading
-        Active → Loading: pointer-events none
-        Loading → Success/Error: duration-normal
-    end note
-    note right of Success
-        Success/Error → Rest: duration-slow
-    end note
-```
-
-### 8.1 Buttons
-
-#### Variants
-
-| Variant | Background | Text | Border | Shadow |
-|---------|------------|------|--------|--------|
-| **Primary** | `--accent-500` | white | none | `--glow-accent` on hover |
-| **Secondary** | `--bg-hover` | `--text-primary` | `--border` | `--elevation-1` |
-| **Ghost** | transparent | `--accent-500` | none | none |
-| **Danger** | `--error` | white | none | error glow on hover |
-| **Success** | `--success` | white | none | success glow on hover |
-
-#### States
-
-```css
-/* Rest */
-.btn { 
-  padding: var(--space-2) var(--space-5);
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  transition: all var(--duration-fast) var(--ease-default);
-}
-
-/* Hover */
-.btn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--elevation-2);
-}
-
-/* Active */
-.btn:active {
-  transform: scale(0.97);
-}
-
-/* Disabled */
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Loading */
-.btn.loading {
-  pointer-events: none;
-  opacity: 0.8;
-}
-```
-
-#### Sizes
-
-| Size | Padding | Font Size | Min Height |
-|------|---------|-----------|------------|
-| **Small** | `6px 12px` | 13px | 32px |
-| **Medium** | `8px 20px` | 14px | 40px |
-| **Large** | `12px 24px` | 16px | 48px |
-
-### 8.2 Cards
-
-```css
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  box-shadow: var(--elevation-2);
-  transition: all var(--duration-normal) var(--ease-out);
-}
-
-.card:hover {
-  border-color: var(--border);
-  box-shadow: var(--elevation-3);
-  transform: translateY(-2px);
-}
-
-.card.interactive:hover {
-  border-color: var(--accent-500);
-  box-shadow: var(--glow-accent);
-}
-```
-
-### 8.3 Inputs
-
-```css
-.input {
-  background: var(--bg-primary);
-  border: 2px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: var(--space-3) var(--space-4);
-  color: var(--text-primary);
-  transition: all var(--duration-fast) var(--ease-default);
-}
-
-.input::placeholder {
-  color: var(--text-muted);
-}
-
-.input:hover {
-  border-color: var(--text-muted);
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--accent-500);
-  box-shadow: 0 0 0 3px var(--accent-100);
-}
-
-.input.error {
-  border-color: var(--error);
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
-}
-
-.input.success {
-  border-color: var(--success);
-}
-```
-
-### 8.4 Badges/Tags
-
-```css
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: 600;
-}
-
-/* Status variants */
-.badge-draft { 
-  background: var(--bg-hover); 
-  color: var(--text-secondary); 
-}
-
-.badge-pending { 
-  background: rgba(245, 158, 11, 0.15); 
-  color: #D97706; /* Light */ / #FBBF24; /* Dark */
-}
-
-.badge-success { 
-  background: rgba(16, 185, 129, 0.15); 
-  color: #059669; /* Light */ / #34D399; /* Dark */
-}
-
-.badge-error { 
-  background: rgba(239, 68, 68, 0.15); 
-  color: #DC2626; /* Light */ / #F87171; /* Dark */
-}
-
-.badge-accent { 
-  background: var(--accent-100); 
-  color: var(--accent-600);
-}
-```
-
-### 8.5 Navigation
-
-#### Header
-
-```css
-.header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 56px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-subtle);
-  backdrop-filter: blur(12px);
-  z-index: 50;
-}
-```
-
-#### Sidebar
-
-```css
-.sidebar {
-  width: 256px;
-  height: calc(100vh - 56px);
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border-subtle);
-  overflow-y: auto;
-}
-
-.sidebar-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  transition: all var(--duration-fast) var(--ease-default);
-}
-
-.sidebar-item:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.sidebar-item.active {
-  background: var(--accent-100);
-  color: var(--accent-600);
-}
-```
-
-### 8.6 Modals
-
-```css
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  z-index: 100;
-}
-
-.modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--bg-card);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--elevation-5);
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: hidden;
-}
-
-.modal-header {
-  padding: var(--space-5);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.modal-body {
-  padding: var(--space-5);
-  overflow-y: auto;
-}
-
-.modal-footer {
-  padding: var(--space-4) var(--space-5);
-  border-top: 1px solid var(--border-subtle);
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
-}
-```
-
-### 8.7 Tables
-
-```css
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th {
-  padding: var(--space-3) var(--space-4);
-  text-align: left;
-  font-weight: 600;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
-}
-
-.table td {
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--border-subtle);
-  color: var(--text-primary);
-}
-
-.table tr:hover td {
-  background: var(--bg-hover);
-}
-
-/* Financial columns - right aligned */
-.table td.numeric {
-  text-align: right;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-}
-```
-
-### 8.8 Progress Indicators
-
-```css
-/* Progress Bar */
-.progress {
-  height: 8px;
-  background: var(--bg-hover);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent-500), var(--accent-600));
-  border-radius: var(--radius-full);
-  transition: width var(--duration-slow) var(--ease-out);
-}
-
-/* Circular Progress */
-.progress-circle {
-  transform: rotate(-90deg);
-}
-
-.progress-circle-track {
-  stroke: var(--bg-hover);
-}
-
-.progress-circle-fill {
-  stroke: var(--accent-500);
-  stroke-linecap: round;
-  transition: stroke-dashoffset var(--duration-slow) var(--ease-out);
-}
-```
-
-### 8.9 Toasts/Notifications
-
-```css
-.toast {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--elevation-4);
-  max-width: 400px;
-}
-
-.toast-success {
-  border-left: 4px solid var(--success);
-}
-
-.toast-error {
-  border-left: 4px solid var(--error);
-}
-
-.toast-warning {
-  border-left: 4px solid var(--warning);
-}
-
-.toast-info {
-  border-left: 4px solid var(--accent-500);
-}
-```
-
----
-
-## 9. Accessibility
-
-### 9.1 Color Contrast Requirements
+### 8.1 Color Contrast Requirements
 
 All color combinations must meet **WCAG 2.1 AA** standards:
 
@@ -964,162 +476,27 @@ All color combinations must meet **WCAG 2.1 AA** standards:
 | UI components | 3:1 | 4.5:1 |
 | Focus indicators | 3:1 | 4.5:1 |
 
-### 9.2 Focus States
+### 8.2 Focus States
 
-All interactive elements must have visible focus:
+All interactive elements must have visible focus indicators. The default focus style uses a 2px accent-colored outline with 2px offset. Buttons use a custom double-ring focus style: a 2px background-colored inner ring surrounded by a 2px accent-colored outer ring, creating a clear halo effect that works on any surface.
 
-```css
-:focus-visible {
-  outline: 2px solid var(--accent-500);
-  outline-offset: 2px;
-}
-
-/* Custom focus ring for buttons */
-.btn:focus-visible {
-  outline: none;
-  box-shadow: 
-    0 0 0 2px var(--bg-primary),
-    0 0 0 4px var(--accent-500);
-}
-```
-
-### 9.3 Keyboard Navigation
+### 8.3 Keyboard Navigation
 
 - All interactive elements must be keyboard accessible
 - Tab order follows visual flow
 - Modal traps focus appropriately
 - Escape closes overlays
 
-### 9.4 Screen Reader Support
+### 8.4 Screen Reader Support
 
 - Use semantic HTML elements
 - Include ARIA labels where needed
 - Announce dynamic content changes
 - Provide text alternatives for icons
 
-### 9.5 Touch Targets
+### 8.5 Touch Targets
 
-Minimum touch target size: **44x44px**
-
-```css
-.touch-target {
-  min-width: 44px;
-  min-height: 44px;
-}
-```
-
----
-
-## 10. Implementation Guide
-
-### 10.1 CSS Variables Setup
-
-Defined in the global stylesheet. The default (`:root`) is **dark mode**; light mode is applied via the `.light` class:
-
-```css
-:root {
-  /* Colors - Dark Mode (Default) */
-  --accent-50: #1A0808;
-  --accent-100: #2D1010;
-  --accent-200: #451515;
-  --accent-300: #5C1B1B;
-  --accent-400: #7A2020;
-  --accent-500: #950606;
-  --accent-600: #B00808;
-  --accent-700: #C41919;
-  --accent-800: #D83232;
-  --accent-900: #E85050;
-
-  --accent: var(--accent-500);
-  --accent-hover: var(--accent-600);
-  --accent-glow: rgba(149, 6, 6, 0.35);
-  --accent-muted: rgba(149, 6, 6, 0.20);
-
-  /* ... additional tokens ... */
-}
-
-.light {
-  /* Colors - Light Mode */
-  --accent-50: #FEF2F2;
-  --accent-100: #FEE2E2;
-  --accent-200: #FECACA;
-  --accent-300: #FCA5A5;
-  --accent-400: #F87171;
-  --accent-500: #950606;
-  --accent-600: #840505;
-  --accent-700: #740505;
-  --accent-800: #530303;
-  --accent-900: #320202;
-
-  --accent: var(--accent-500);
-  --accent-hover: var(--accent-600);
-  --accent-glow: rgba(149, 6, 6, 0.2);
-  --accent-muted: rgba(149, 6, 6, 0.1);
-
-  /* ... additional tokens ... */
-}
-```
-
-### 10.2 Tailwind Configuration
-
-Extended in the Tailwind configuration:
-
-```typescript
-const config: Config = {
-  theme: {
-    extend: {
-      colors: {
-        accent: {
-          50: 'var(--accent-50)',
-          100: 'var(--accent-100)',
-          // ... etc
-          500: 'var(--accent-500)',
-          600: 'var(--accent-600)',
-          // ... etc
-        },
-      },
-      boxShadow: {
-        'elevation-1': 'var(--elevation-1)',
-        'elevation-2': 'var(--elevation-2)',
-        'elevation-3': 'var(--elevation-3)',
-        'elevation-4': 'var(--elevation-4)',
-        'elevation-5': 'var(--elevation-5)',
-        'glow-accent': 'var(--glow-accent)',
-      },
-      transitionTimingFunction: {
-        'ease-default': 'var(--ease-default)',
-        'ease-spring': 'var(--ease-spring)',
-      },
-    },
-  },
-}
-```
-
-### 10.3 Component Migration Checklist
-
-When updating existing components:
-
-- [ ] Replace hardcoded colors with CSS variables
-- [ ] Update shadows to elevation tokens
-- [ ] Add proper hover/focus/active states
-- [ ] Ensure accessible contrast ratios
-- [ ] Add reduced-motion support
-- [ ] Test in both light and dark modes
-
-### 10.4 Design Token Files
-
-For larger projects, consider organizing tokens:
-
-```
-styles/
-├── tokens/
-│   ├── colors.css
-│   ├── typography.css
-│   ├── spacing.css
-│   ├── elevation.css
-│   └── motion.css
-└── globals.css (imports all tokens)
-```
+Minimum touch target size: **44x44px** for all interactive elements.
 
 ---
 
@@ -1145,46 +522,6 @@ styles/
 
 ---
 
-## Appendix B: Quick Reference
-
-### Shadows Cheatsheet
-
-```css
-/* Cards at rest */      box-shadow: var(--elevation-2);
-/* Cards on hover */     box-shadow: var(--elevation-3);
-/* Dropdowns */          box-shadow: var(--elevation-4);
-/* Modals */             box-shadow: var(--elevation-5);
-/* Accent glow */        box-shadow: var(--glow-accent);
-```
-
-### Spacing Cheatsheet
-
-```css
-/* Tight */     gap: var(--space-2);    /* 8px */
-/* Standard */  gap: var(--space-4);    /* 16px */
-/* Spacious */  gap: var(--space-6);    /* 24px */
-/* Section */   gap: var(--space-8);    /* 32px */
-```
-
-### Transition Cheatsheet
-
-```css
-/* Quick hover */    transition: all var(--duration-fast) var(--ease-default);
-/* Standard */       transition: all var(--duration-normal) var(--ease-default);
-/* Smooth entry */   transition: all var(--duration-slow) var(--ease-out);
-/* Bouncy */         transition: all var(--duration-normal) var(--ease-spring);
-```
-
----
-
-## Related Documentation
-
-| Document | Description |
-|----------|-------------|
-| [README](../README.md) | Platform overview, business context, and workflow summary |
-| [Technical Architecture](ARCHITECTURE.md) | System architecture, data flow, and security model |
-| [Artificial Intelligence](ARTIFICIAL_INTELLIGENCE.md) | AI models, cost code system, confidence scoring, and training data |
-| [Development Roadmap](ROADMAP.md) | Upcoming features, AI enhancements, and development timeline |
 
 ### Upcoming Design Work
 
@@ -1194,7 +531,17 @@ See the [Development Roadmap](ROADMAP.md) for detailed timelines on features tha
 - **Lender Portal** — Read-only portfolio view for lending partners
 - **Mobile Inspection App** — Touch-optimized interface for field inspections and photo capture
 
+## Related Documentation
+
+| Document | Description |
+|----------|-------------|
+| [README](../README.md) | Project overview, workflow summary, and documentation index |
+| [Architecture](ARCHITECTURE.md) | System architecture, data model, and deployment |
+| [Security](SECURITY.md) | Authentication, permissions, data-level enforcement, and audit trail |
+| [Artificial Intelligence](ARTIFICIAL_INTELLIGENCE.md) | AI pipeline, cost code system, confidence model, and training data |
+| [Glossary](GLOSSARY.md) | Definitions of key construction lending, financial, and platform terms |
+| [Roadmap](ROADMAP.md) | Upcoming features, timeline, and development priorities |
+
 ---
 
 *TD3 Design Language v1.2 -- © 2024-2026 TD3, built by Grayson Graham -- Last updated: February 2026*
-

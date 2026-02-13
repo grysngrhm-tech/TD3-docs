@@ -120,7 +120,7 @@ flowchart LR
 | Wire Batches | Consolidated builder payments with funding reports and audit trail | [Architecture: Wire Batches](docs/ARCHITECTURE.md#wire-batch-funding) |
 | AI Invoice Matching | AI extraction, semantic matching, confidence-gated automation, and learning | [AI: Invoice-to-Budget Matching](docs/ARTIFICIAL_INTELLIGENCE.md#invoice-to-budget-matching) |
 | Financial Calculations | Compound interest, fee escalation, IRR, payoff projections | [Architecture: Data Architecture](docs/ARCHITECTURE.md#data-architecture) |
-| Compliance & Audit | Immutable records, timestamped actions, document verification | [Architecture: Security Model](docs/ARCHITECTURE.md#security-model) |
+| Compliance & Audit | Immutable records, timestamped actions, document verification | [Security](docs/SECURITY.md) |
 | AI Intelligence | Budget standardization, invoice extraction, semantic matching, self-improving system | [Artificial Intelligence in TD3](docs/ARTIFICIAL_INTELLIGENCE.md) |
 
 Every capability listed above is built on [TD3's standardized cost code system](docs/ARTIFICIAL_INTELLIGENCE.md#td3s-standardized-cost-code-system)---a proprietary framework of 12 parent categories and 89 subcategories that maps every builder's unique terminology to a single canonical structure. This standardization is what makes cross-project comparison, portfolio analytics, and AI-powered automation possible.
@@ -164,7 +164,7 @@ flowchart TD
 
 TD3 uses passwordless authentication with a pre-authorized access list, so only approved team members can sign in---no passwords to manage or compromise. Four stackable permissions control exactly what each user can do, enforced at the database level through row-level security. Every action is recorded in an immutable audit trail with timestamps and user attribution.
 
-The interface adapts to each user's permission set---controls and actions that a user cannot perform are hidden rather than disabled, keeping the experience clean and focused. See [Architecture: Security Model](docs/ARCHITECTURE.md#security-model) for the full security architecture and [Design Language: Polymorphic Behaviors](docs/DESIGN_LANGUAGE.md#7-polymorphic-behaviors) for how the UI adapts to context and role.
+The interface adapts to each user's permission set---controls and actions that a user cannot perform are hidden rather than disabled, keeping the experience clean and focused. See the [Security](docs/SECURITY.md) guide for the full security architecture and [Design Language: Polymorphic Behaviors](docs/DESIGN_LANGUAGE.md#7-polymorphic-behaviors) for how the UI adapts to context and role.
 
 ---
 
@@ -193,10 +193,12 @@ TD3's documentation is organized into four deep-dive guides, each covering a spe
 
 | Document | What It Covers | Key Topics |
 |----------|---------------|------------|
-| [Technical Architecture](docs/ARCHITECTURE.md) | System design, data model, deployment infrastructure, and the security model that governs all access | System layers, loan lifecycle stages, draw processing workflow, wire batch funding, data architecture, row-level security, audit trail |
-| [Artificial Intelligence](docs/ARTIFICIAL_INTELLIGENCE.md) | How AI is used at each stage of the loan servicing workflow, from budget import through invoice matching and beyond | TD3's cost code system, budget standardization, invoice data extraction, semantic matching, confidence-gated automation, training data capture, self-improvement loop, model selection rationale |
-| [Development Roadmap](docs/ROADMAP.md) | Upcoming features with timelines, implementation details, and Gantt chart | DocuSign integration, Adaptive Cards, builder and lender portals, portfolio RAG chatbot, mobile inspection app, self-improving matching, builder performance intelligence, predictive analytics |
-| [Design Language](docs/DESIGN_LANGUAGE.md) | Visual design system governing every screen in TD3, from color tokens to component specifications | Brand colors, neutral palette, semantic colors, typography scale, spacing grid, elevation system, motion patterns, polymorphic behaviors, accessibility standards |
+| [Technical Architecture](docs/ARCHITECTURE.md) | System architecture, data model, and deployment | System layers, loan lifecycle stages, draw processing workflow, wire batch funding, data architecture |
+| [Security](docs/SECURITY.md) | Authentication, permissions, data-level enforcement, and audit trail | Passwordless auth, stackable permissions, row-level security, webhook verification, immutable records |
+| [Artificial Intelligence](docs/ARTIFICIAL_INTELLIGENCE.md) | AI pipeline, cost code system, confidence model, and training data | Budget standardization, invoice data extraction, semantic matching, confidence-gated automation, training data capture, self-improvement loop, model selection rationale |
+| [Development Roadmap](docs/ROADMAP.md) | Upcoming features, timeline, and development priorities | DocuSign integration, Adaptive Cards, builder and lender portals, portfolio RAG chatbot, mobile inspection app, self-improving matching, builder performance intelligence, predictive analytics |
+| [Design Language](docs/DESIGN_LANGUAGE.md) | Design philosophy, color system, polymorphic behaviors, and accessibility | Brand colors, neutral palette, semantic colors, typography scale, spacing grid, elevation system, motion patterns, polymorphic behaviors |
+| [Glossary](docs/GLOSSARY.md) | Definitions of key construction lending, financial, and platform terms | Loan lifecycle, draw workflow, wire batches, cost codes, AI matching, permissions |
 
 ---
 
