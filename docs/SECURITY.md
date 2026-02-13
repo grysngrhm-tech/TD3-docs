@@ -146,7 +146,7 @@ Every AI decision --- automatic or human-reviewed --- is logged with the confide
 
 Communication between the AI engine and TD3 uses **encrypted, authenticated channels**. Both ends verify a shared cryptographic secret on every request. If verification fails, the request is rejected entirely.
 
-> For the full AI architecture, including the confidence model and training pipeline, see [Artificial Intelligence](ARTIFICIAL_INTELLIGENCE.md).
+> For the full AI architecture, including the confidence model and training pipeline, see [Artificial Intelligence: Confidence and Trust](ARTIFICIAL_INTELLIGENCE.md#confidence-and-trust).
 
 ---
 

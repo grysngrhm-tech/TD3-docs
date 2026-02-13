@@ -86,7 +86,7 @@ Enable workflow notifications and approvals directly within the team's existing 
 
 **Why self-service matters:** Builders and lenders currently rely on phone calls, emails, and manual report generation to get updates on their loans. Every "what's the status of my draw?" inquiry requires a processor to look up the information and relay it---a pattern that scales linearly with portfolio size. Self-service portals eliminate this overhead by giving external stakeholders real-time visibility into their own data, reducing support requests and freeing the internal team to focus on processing work.
 
-Provide external stakeholders with secure, limited-access views into their relevant data. Both portals build on TD3's existing [security model](SECURITY.md) and [role-based UI adaptations](DESIGN_LANGUAGE.md#75-role-based-adaptations-future).
+Provide external stakeholders with secure, limited-access views into their relevant data. Both portals build on TD3's existing [security model](SECURITY.md#permissions-what-each-user-can-do) and [role-based UI adaptations](DESIGN_LANGUAGE.md#75-role-based-adaptations-future).
 
 **Builder Portal:**
 - View their own loans and current balances

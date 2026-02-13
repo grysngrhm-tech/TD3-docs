@@ -40,7 +40,7 @@
 
 A schedule of periodic interest payments over the life of a construction loan. TD3 calculates compound interest with monthly accrual at month-end and at each draw funding event, giving a real-time view of the loan's interest position throughout the construction period.
 
-> See [Architecture](ARCHITECTURE.md) for details on financial calculations.
+> See [Architecture: Data Architecture](ARCHITECTURE.md#data-architecture) for details on financial calculations.
 
 ---
 

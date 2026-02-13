@@ -300,7 +300,7 @@ TD3's AI system is built on a three-layer trust model that ensures accuracy whil
 
 ### Layer 1: AI Confidence Scoring
 
-Every AI decision includes a numerical confidence score that reflects the model's certainty. These scores drive automation thresholds and determine the level of human involvement required. The interface uses color-coded indicators---green for high confidence, amber for moderate, red for low---so reviewers can immediately identify where attention is needed. See the [Design Language](DESIGN_LANGUAGE.md) for the full confidence color system.
+Every AI decision includes a numerical confidence score that reflects the model's certainty. These scores drive automation thresholds and determine the level of human involvement required. The interface uses color-coded indicators---green for high confidence, amber for moderate, red for low---so reviewers can immediately identify where attention is needed. See the [Design Language: Status-Specific Palettes](DESIGN_LANGUAGE.md#25-status-specific-palettes-polymorphic) for the full confidence color system.
 
 ### Layer 2: Human Oversight
 
@@ -314,7 +314,7 @@ Every AI decision, human review, and correction is permanently recorded. The aud
 2. **Accountability** --- Every match can be attributed to either an AI decision or a specific human reviewer.
 3. **Improvement** --- The historical record provides the data needed to calibrate confidence thresholds, identify systematic AI errors, and measure accuracy improvements over time.
 
-For details on how the audit trail integrates with the broader security model, see [Security](SECURITY.md).
+For details on how the audit trail integrates with the broader security model, see [Security: Audit Trail](SECURITY.md#audit-trail).
 
 ### Why Three Layers Matter
 

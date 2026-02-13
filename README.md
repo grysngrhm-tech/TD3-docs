@@ -120,7 +120,7 @@ flowchart LR
 | Wire Batches | Consolidated builder payments with funding reports and audit trail | [Architecture: Wire Batches](docs/ARCHITECTURE.md#wire-batch-funding) |
 | AI Invoice Matching | AI extraction, semantic matching, confidence-gated automation, and learning | [AI: Invoice-to-Budget Matching](docs/ARTIFICIAL_INTELLIGENCE.md#invoice-to-budget-matching) |
 | Financial Calculations | Compound interest, fee escalation, IRR, payoff projections | [Architecture: Data Architecture](docs/ARCHITECTURE.md#data-architecture) |
-| Compliance & Audit | Immutable records, timestamped actions, document verification | [Security](docs/SECURITY.md) |
+| Compliance & Audit | Immutable records, timestamped actions, document verification | [Security: Audit Trail](docs/SECURITY.md#audit-trail) |
 | AI Intelligence | Budget standardization, invoice extraction, semantic matching, self-improving system | [Artificial Intelligence in TD3](docs/ARTIFICIAL_INTELLIGENCE.md) |
 
 Every capability listed above is built on [TD3's standardized cost code system](docs/ARTIFICIAL_INTELLIGENCE.md#td3s-standardized-cost-code-system)---a proprietary framework of 12 parent categories and 89 subcategories that maps every builder's unique terminology to a single canonical structure. This standardization is what makes cross-project comparison, portfolio analytics, and AI-powered automation possible.
@@ -164,7 +164,7 @@ flowchart TD
 
 TD3 uses passwordless authentication with a pre-authorized access list, so only approved team members can sign in---no passwords to manage or compromise. Four stackable permissions control exactly what each user can do, enforced at the database level through row-level security. Every action is recorded in an immutable audit trail with timestamps and user attribution.
 
-The interface adapts to each user's permission set---controls and actions that a user cannot perform are hidden rather than disabled, keeping the experience clean and focused. See the [Security](docs/SECURITY.md) guide for the full security architecture and [Design Language: Polymorphic Behaviors](docs/DESIGN_LANGUAGE.md#7-polymorphic-behaviors) for how the UI adapts to context and role.
+The interface adapts to each user's permission set---controls and actions that a user cannot perform are hidden rather than disabled, keeping the experience clean and focused. See the [Security](docs/SECURITY.md#overview) guide for the full security architecture and [Design Language: Polymorphic Behaviors](docs/DESIGN_LANGUAGE.md#7-polymorphic-behaviors) for how the UI adapts to context and role.
 
 ---
 

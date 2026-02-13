@@ -183,7 +183,7 @@ For the full AI reference---including model selection rationale, confidence thre
 
 ## Security Model
 
-TD3's comprehensive security architecture is documented in the dedicated [Security](SECURITY.md) guide, covering authentication, the four-capability permission model, data-level enforcement, audit trail, AI security guardrails, and infrastructure security.
+TD3's comprehensive security architecture is documented in the dedicated [Security](SECURITY.md#overview) guide, covering authentication, the four-capability permission model, data-level enforcement, audit trail, AI security guardrails, and infrastructure security.
 
 The interface adapts to each user's permission set---controls and actions that a user cannot perform are hidden rather than disabled, keeping the experience clean and focused. For details on role-adaptive design patterns, see the [Design Language: Polymorphic Behaviors](DESIGN_LANGUAGE.md#7-polymorphic-behaviors).
 
