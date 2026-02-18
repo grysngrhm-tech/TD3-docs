@@ -101,7 +101,7 @@ Manually reading each invoice, identifying the vendor, extracting the total amou
 
 When invoice PDFs are uploaded alongside a draw request, TD3 sends each file to an AI model that reads the document and extracts structured data---converting an unstructured PDF into a clean data record the system can reason about.
 
-**AI Model: GPT-4.1-mini** --- Selected for its optimization in document parsing tasks. Invoice extraction is high-volume work (every draw request may include dozens of invoices) where speed and cost-effectiveness matter. GPT-4.1-mini delivers fast, accurate extraction at a fraction of the cost of larger models, making it practical to process invoices at scale without compromising quality.
+**AI Model: GPT-4.1** --- Selected for its accuracy in document parsing across diverse invoice formats. Invoice extraction demands reliable interpretation of varied layouts, handwritten elements, and inconsistent terminology. GPT-4.1 delivers the accuracy needed to correctly parse vendor names, amounts, and line item descriptions from the wide variety of construction invoices the system encounters.
 
 ### What Gets Extracted
 
@@ -150,7 +150,7 @@ A human performing this task must hold multiple data points in working memory an
 
 TD3 sends the extracted invoice data---along with the complete set of draw request lines and their budget context---to an AI model that evaluates all possible matches and selects the best one. The AI sees every candidate simultaneously, weighing multiple factors to make a holistic decision.
 
-**AI Model: GPT-5-mini** --- Selected for its superior multi-factor reasoning capability. Unlike extraction (which is primarily document parsing), matching requires weighing trade alignment, amount similarity, work context, vendor history, and dedup status simultaneously. GPT-5-mini's advanced reasoning makes it significantly more accurate on ambiguous cases where multiple budget lines could plausibly match an invoice.
+**AI Model: GPT-4.1** --- Selected for its strong multi-factor reasoning capability at practical cost. Unlike extraction (which is primarily document parsing), matching requires weighing trade alignment, amount similarity, work context, vendor history, and dedup status simultaneously. GPT-4.1 delivers accurate semantic reasoning on ambiguous cases where multiple budget lines could plausibly match an invoice, while keeping per-match costs manageable at scale.
 
 ### Matching Process
 
@@ -330,13 +330,13 @@ No single layer needs to be perfect. Together, they provide the assurance requir
 
 ## AI Models: Selection Rationale
 
-TD3 uses three different AI models, each selected for the specific demands of its task:
+TD3 uses two AI models, each selected for the specific demands of its task:
 
 | Task | Model | Why This Model |
 |------|-------|----------------|
 | **Budget Categorization** | GPT-4o | Requires deep reasoning about ambiguous construction terminology and multi-step inference. Classification quality is paramount---errors here propagate to every downstream process. |
-| **Invoice Extraction** | GPT-4.1-mini | High-volume document parsing where speed and cost-effectiveness matter. Each draw may include dozens of invoices. Extraction is pattern recognition, not complex reasoning. |
-| **Invoice Matching** | GPT-5-mini | Multi-factor decision-making that weighs trade alignment, amounts, work context, vendor history, and dedup status simultaneously. Superior reasoning accuracy on ambiguous cases. |
+| **Invoice Extraction** | GPT-4.1 | Reliable document parsing across diverse invoice formats. Accuracy in reading varied layouts, handwritten elements, and inconsistent terminology is critical for downstream matching. |
+| **Invoice Matching** | GPT-4.1 | Multi-factor semantic reasoning that weighs trade alignment, amounts, work context, vendor history, and dedup status simultaneously. Accurate on ambiguous cases at practical per-match cost. |
 
 The model selection reflects a deliberate cost-accuracy tradeoff: the most capable (and expensive) models are used where reasoning complexity is highest, while faster, more efficient models handle high-volume pattern recognition tasks.
 

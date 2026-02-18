@@ -139,8 +139,8 @@ The complete invoice processing pipeline from upload through funding:
 
 ```mermaid
 flowchart TB
-    Upload["Upload Invoice PDF"] --> Extraction["AI Extraction\n(GPT-4.1-mini)"]
-    Extraction --> Matching["AI Matching\n(GPT-5-mini)"]
+    Upload["Upload Invoice PDF"] --> Extraction["AI Extraction\n(GPT-4.1)"]
+    Extraction --> Matching["AI Matching\n(GPT-4.1)"]
     Matching --> Scoring{"Confidence\nScore"}
 
     Scoring -->|"≥ 95%"| Auto["Auto-Approved"]
