@@ -174,7 +174,30 @@ For data visualization and special emphasis:
 
 Each complementary color also has a `-muted` variant (e.g., `--teal-muted`) for background tints.
 
-### 2.5 Status-Specific Palettes (Polymorphic)
+### 2.5 Data Visualization Palette
+
+All charts in TD3 use a **single stable color mapping** for NAHB construction categories. This ensures a user can visually identify the same category across the Fund Flow (Sankey), Funding Timeline (stacked area), and Budget Breakdown (pie) charts without referring to a legend.
+
+| Category | Hex | Swatch | Construction Phase |
+|----------|-----|--------|--------------------|
+| Builder Expense | `#64748B` | Slate | Pre-construction |
+| General Conditions | `#EF4444` | Red | Project setup |
+| Site Work | `#F97316` | Orange | Site preparation |
+| Concrete & Foundations | `#A8A29E` | Stone | Foundation |
+| Framing | `#3B82F6` | Blue | Structural |
+| Exterior Finishes | `#10B981` | Emerald | Exterior |
+| Plumbing | `#06B6D4` | Cyan | Rough-in MEP |
+| HVAC / Mechanical | `#8B5CF6` | Violet | Rough-in MEP |
+| Electrical | `#EAB308` | Yellow | Rough-in MEP |
+| Insulation, Drywall & Paint | `#EC4899` | Pink | Interior rough |
+| Interior Finishes | `#84CC16` | Lime | Interior finish |
+| Landscaping & Exterior Amenities | `#14B8A6` | Teal | Final |
+
+Colors are defined in `lib/constants.ts` as `NAHB_CATEGORY_COLORS` and retrieved via `getCategoryColor()`. Unknown categories fall back to `#9CA3AF` (gray).
+
+> The complementary accent colors in Section 2.4 remain available for non-category data (e.g., wire status, loan-level indicators). Subcategory drill-down charts use a separate categorical palette since they represent items within a single category.
+
+### 2.6 Status-Specific Palettes (Polymorphic)
 
 The interface tints based on workflow status:
 
@@ -544,4 +567,4 @@ See the [Development Roadmap](ROADMAP.md) for detailed timelines on features tha
 
 ---
 
-*TD3 Design Language v1.2 -- © 2024-2026 TD3, built by Grayson Graham -- Last updated: February 2026*
+*TD3 Design Language v1.3 -- © 2024-2026 TD3, built by Grayson Graham -- Last updated: February 2026*

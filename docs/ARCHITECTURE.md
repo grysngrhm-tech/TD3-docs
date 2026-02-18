@@ -91,6 +91,8 @@ This standardization is what makes cross-project comparison, builder performance
 
 Users review and adjust AI-suggested categories through cascading dropdowns before approving the budget. Once draws are funded against a budget line, that line is protected from deletion during re-imports.
 
+The Progress Budget Report provides both table and chart views of budget data. The table groups budget lines into a three-level hierarchy---NAHB category, subcategory (merging duplicate mappings), and individual builder line items---each expandable with draw history. The chart view includes a fund flow Sankey, a funding timeline stacked area chart, and an interactive budget breakdown pie with subcategory drill-down. All three charts use a unified color mapping so each NAHB category is visually consistent across visualizations.
+
 > For details on the cost code system, AI model selection, and confidence scoring, see [Budget Standardization](ARTIFICIAL_INTELLIGENCE.md#budget-standardization).
 
 ### Draw Processing Workflow
