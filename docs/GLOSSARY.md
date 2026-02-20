@@ -25,6 +25,8 @@
 - [LTV (Loan-to-Value)](#ltv-loan-to-value)
 - [OTP (One-Time Password)](#otp-one-time-password)
 - [Payoff](#payoff)
+- [Payoff Adjustments](#payoff-adjustments)
+- [Per Diem](#per-diem)
 - [Project](#project)
 - [Retainage](#retainage)
 - [Row-Level Security](#row-level-security)
@@ -38,9 +40,9 @@
 
 ### Amortization
 
-A schedule of periodic interest payments over the life of a construction loan. TD3 calculates compound interest with monthly accrual at month-end and at each draw funding event, giving a real-time view of the loan's interest position throughout the construction period.
+A schedule of periodic interest payments over the life of a construction loan. TD3 calculates compound interest with accrual at two trigger points: the last day of each calendar month, and the funding date of each new draw. Interest is charged on the total balance (principal plus all previously accrued interest), producing a real-time view of the loan's interest position. The amortization schedule feeds into payoff calculations, fee escalation tracking, and projection charts.
 
-> See [Architecture: Data Architecture](ARCHITECTURE.md#data-architecture) for details on financial calculations.
+> See [Architecture: Payoff Workflow](ARCHITECTURE.md#payoff-workflow) for details on financial calculations.
 
 ---
 
@@ -122,7 +124,9 @@ The AI process of reading an uploaded invoice PDF and converting it into structu
 
 ### Fee Escalation
 
-TD3's tiered fee structure that increases over the loan term to incentivize timely project completion. The fee starts at 2% for months 1--6, increases by 0.25% per month from months 7--12, jumps to 5.9% at month 13, and increases by 0.4% per month thereafter. These calculations are performed server-side using auditable formulas.
+TD3's tiered fee structure that increases over the loan term to incentivize timely project completion. The fee starts at 2% for months 1--6, increases by 0.25% per month from months 7--12, jumps to 5.9% at month 13 (the extension fee), and increases by 0.4% per month thereafter. The fee is calculated on the total principal drawn (not the committed loan amount). Fee escalation is visualized in the Payoff tab's Fee Escalation Timeline chart.
+
+> See [Architecture: Payoff Workflow](ARCHITECTURE.md#payoff-workflow) for details.
 
 ---
 
@@ -172,7 +176,23 @@ An 8-digit numeric code sent via email for passwordless authentication. Each cod
 
 ### Payoff
 
-The process of closing out a completed construction loan, including final interest calculation and balance settlement. Payoff actions require the Approve Payoffs permission, enforced at both the application and database levels. Once a payoff is completed, the project transitions to Historic status.
+The process of closing out a completed construction loan through a three-step approval workflow. First, a loan processor approves the calculated payoff statement---which includes principal balance, accrued compound interest, fee escalation charges, document fees, and any credits or debits. Second, a user with payoff approval authority independently verifies the statement, transitioning it from DRAFT to APPROVED status. Third, the processor records the actual payoff date and amount received, completing the loan and moving it to Historic status.
+
+The payoff statement is a formal financial document that includes wire instructions, a per diem rate for date adjustments, and an approval audit trail. It can be downloaded as a PDF at any point after approval.
+
+> See [Architecture: Payoff Workflow](ARCHITECTURE.md#payoff-workflow) for the full approval pipeline.
+
+---
+
+### Payoff Adjustments
+
+Credits and debits applied to the payoff statement that modify the final balance due. Credits (such as builder rebates or escrow refunds) reduce the payoff amount; debits (such as late fees or inspection charges) increase it. Adjustments are editable before approval, then locked into a persistent JSONB record once the payoff is approved. The net adjustment amount appears as a line item on the formal payoff statement.
+
+---
+
+### Per Diem
+
+The daily interest charge on a construction loan, calculated as the total balance (principal plus accrued compound interest) multiplied by the annual interest rate divided by 365. The per diem rate is shown on the payoff statement so that if funds are received after the statement's good-through date, each additional day's cost is clearly documented.
 
 ---
 

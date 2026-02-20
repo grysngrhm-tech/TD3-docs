@@ -13,6 +13,12 @@ For business context and a high-level workflow overview, see the [README](../REA
 1. [Overview](#overview)
 2. [System Architecture](#system-architecture)
 3. [Core Platform](#core-platform)
+   - [Loan Lifecycle Management](#loan-lifecycle-management)
+   - [Budget Intelligence](#budget-intelligence)
+   - [Draw Processing Workflow](#draw-processing-workflow)
+   - [Wire Batch Funding](#wire-batch-funding)
+   - [Payoff Workflow](#payoff-workflow)
+   - [Invoice Matching](#invoice-matching)
 4. [AI Integration](#ai-integration)
 5. [Security Model](#security-model)
 6. [Data Architecture](#data-architecture)
@@ -70,13 +76,21 @@ The system is organized into three layers:
 stateDiagram-v2
     [*] --> Pending
     Pending --> Active : Documents Recorded
-    Active --> Historic : Loan Paid Off
+
+    state Active {
+        [*] --> Servicing
+        Servicing --> PayoffApproved : Processor Approves
+        PayoffApproved --> PayoffVerified : Approver Verifies
+        PayoffVerified --> ReadyToComplete : --
+    }
+
+    Active --> Historic : Loan Completed
 ```
 
 Every construction loan progresses through three stages:
 
 - **Pending** -- Loan origination. Term sheet fields are entered, the builder and lender are linked, and documents are prepared for execution.
-- **Active** -- The loan is funded and in progress. Budgets are tracked, draws are processed, and the amortization schedule accrues interest in real time.
+- **Active** -- The loan is funded and in progress. Budgets are tracked, draws are processed, and compound interest accrues in real time. When a loan is ready for payoff, it follows a three-step approval workflow (approve, verify, complete) before transitioning to historic.
 - **Historic** -- The loan has been paid off. All data is preserved as an immutable record for performance analysis and auditing.
 
 The platform supports multiple builders and lenders, with each loan linking to a builder entity that carries banking information for wire transfers.
@@ -125,6 +139,46 @@ Wire batches consolidate multiple draws for the same builder into a single wire 
 - Builder banking information for the wire
 - Status tracking from creation through confirmation
 - Complete audit trail of all actions
+
+### Payoff Workflow
+
+When a construction loan reaches completion, the payoff workflow manages the transition from active servicing to final settlement. The process is governed by a three-step approval pipeline with separation of duties enforced at the permission level.
+
+**Approval Pipeline**
+
+1. **Approve** (requires `processor` permission) -- A processor reviews the calculated payoff statement, optionally adjusts the final balance with credits or debits, and approves. This locks the adjustments into a structured record and captures who approved and when.
+2. **Verify** (requires `approve_payoffs` permission) -- A second user with payoff approval authority independently verifies the statement. The statement transitions from draft to approved status. Processors can also revise an approval if corrections are needed, returning the workflow to step one.
+3. **Complete** (requires `processor` permission) -- The processor records the actual payoff date and the actual amount received (which may differ from the statement amount), then the loan transitions to historic.
+
+**Payoff Statement**
+
+The system generates a print-ready payoff statement that serves as both an internal review document and an external deliverable. The statement includes:
+
+- Borrower, property, and loan details
+- Line items: principal balance, accrued interest, document fee, and finance fee
+- Adjustments (credits and debits applied during the approval step)
+- Per diem rate, wire instructions, and disclaimer
+- Approval audit trail showing who approved and verified the statement
+- A draft or approved watermark based on verification status
+
+The statement is downloadable as a PDF rendered entirely on the client side.
+
+**Financial Calculations**
+
+Interest and fees are computed in real time based on the loan terms and draw history:
+
+- **Compound interest** accrues at month-end and at each draw funding event, compounding on the running balance.
+- **Fee escalation** follows a defined schedule: 2% flat for months one through six, increasing by 0.25% per month for months seven through twelve, a 5.9% extension fee at month thirteen, and an additional 0.4% per month thereafter.
+- **Per diem** is the daily interest on the total balance (principal plus accrued interest), used to calculate payoff amounts for specific dates.
+- **Finance fee** is the fee rate multiplied by total principal drawn (not the committed loan amount).
+
+**Chart Dashboard**
+
+The payoff tab includes a chart view with three interactive visualizations:
+
+- **Fee Escalation Timeline** -- A step chart showing how the fee rate progresses over an eighteen-month period, highlighting the extension threshold.
+- **Payoff Projection** -- A line chart plotting interest growth and total payoff amount over time.
+- **What-If Comparison** -- A stacked bar chart comparing the cost of paying off the loan at different future dates, helping borrowers quantify the impact of timing.
 
 ### Invoice Matching
 
@@ -200,6 +254,8 @@ Each project has a set of **Budgets**: categorized line items that define the ex
 When a builder requests funds, they submit a **Draw Request** containing individual line items. Each draw line maps to a budget category, and the system validates that the requested amount does not exceed the budget's remaining balance. **Invoices** are uploaded alongside draw requests to support the funding amounts; each invoice is matched to a specific draw line through AI-assisted or manual review.
 
 When draws are approved, they are grouped into **Wire Batches** by builder---consolidating multiple draw requests into a single wire transfer for efficient payment processing. Once a wire batch is confirmed, budget spent amounts are updated atomically and the funded records become immutable.
+
+Projects also carry payoff workflow state: approval status, verification status, the identifiers and timestamps of the approver and verifier, and a structured column that persists payoff adjustments (credits and debits) that modify the final balance. This state drives the three-step payoff pipeline and the draft-versus-approved rendering of the payoff statement.
 
 All user actions flow through a **permissions system** that enforces role-based access at both the application and database layers. Every action is recorded in a comprehensive **audit trail** that provides complete traceability from initial data entry through final funding.
 
