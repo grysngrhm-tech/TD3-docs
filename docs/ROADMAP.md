@@ -82,6 +82,18 @@ Enable workflow notifications and approvals directly within the team's existing 
 
 **Integration mechanics:** When a triggering event occurs in TD3 (e.g., a draw moves to `pending_wire`), the system constructs an Adaptive Card JSON payload with the relevant data and sends it to a Microsoft webhook endpoint. The card renders in the recipient's Teams channel or Outlook inbox. When the user takes an action (clicks a button, inputs a date), the response is sent back to a TD3 API callback route, which validates the action, applies it to the database, and logs the activity.
 
+**M365 infrastructure requirements** (requested from CMIT April 2026):
+
+| Component | Details |
+|-----------|---------|
+| **Entra ID app registration** | `TD3` — with `Mail.Send` (Application) permission + admin consent |
+| **Dedicated sender mailbox** | `td3@tennantdevelopments.com` (shared mailbox, no license) |
+| **Azure Bot Service** | Free tier, linked to the Entra app registration. Outlook + Teams channels enabled |
+| **Entra role for Grayson** | Application Developer — allows ongoing redirect URI and client secret management |
+| **Actionable Messages provider** | Organization scope — registered via [developer dashboard](https://aka.ms/publishoam), requires Exchange Admin approval from CMIT |
+
+**Delivery paths:** Outlook receives cards via email (sent from the shared mailbox with Adaptive Card markup). Teams receives cards via Azure Bot Service. Both paths route user actions back to TD3 API callback routes for processing. Auth OTP delivery remains separate on `bot@mail.td3.tennantdevelopments.com` via Resend.
+
 ### Builder & Lender Portals
 
 **Why self-service matters:** Builders and lenders currently rely on phone calls, emails, and manual report generation to get updates on their loans. Every "what's the status of my draw?" inquiry requires a processor to look up the information and relay it---a pattern that scales linearly with portfolio size. Self-service portals eliminate this overhead by giving external stakeholders real-time visibility into their own data, reducing support requests and freeing the internal team to focus on processing work.
