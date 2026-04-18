@@ -259,6 +259,26 @@ Projects also carry payoff workflow state: approval status, verification status,
 
 All user actions flow through a **permissions system** that enforces role-based access at both the application and database layers. Every action is recorded in a comprehensive **audit trail** that provides complete traceability from initial data entry through final funding.
 
+### Unified Activity Log
+
+Every meaningful event in TD3 writes to a single `user_activity` table: logins, entity mutations (create/update/delete), status changes (funded, approved, verified, rejected), invoice pipeline events, permission changes, and outbound notifications (card_sent, card_opened).
+
+Each row carries:
+- **Actor identification**: either a `user_id` (for authenticated TD3 users) or an `actor_email` (for system, n8n workflow, cron job, or Adaptive Card actions). The `actor_type` column distinguishes the source.
+- **Entity reference**: `entity_type` + `entity_id` + `entity_label` make every row traceable to the object it affected.
+- **Human description**: a narrative string rendered directly in the admin activity feed.
+- **Data snapshots**: `old_data` and `new_data` JSONB fields capture before/after state for mutations, enabling a diff view.
+- **Security context**: IP, user agent, device, browser, and geolocation are captured on login events for security auditing.
+
+The unified log replaces an earlier two-table design (`audit_events` + `user_activity`) with a single source of truth that powers both compliance audit and user-facing activity feeds. The admin activity feed at `/admin/activity` provides filtering by actor type, action, entity, user, and date range, along with a JSON diff viewer for comparing pre/post-mutation state.
+
+### Interactive Email Notifications (Adaptive Cards)
+
+TD3 sends interactive Adaptive Cards to Outlook inboxes for workflow items requiring action — wire funding confirmations and payoff verifications. Recipients can act on the card directly from Outlook without logging into the web app, and their actions flow through the same business logic helpers as the in-app flows, producing consistent state changes and activity log entries across both paths.
+
+Cards are delivered via Microsoft Graph API from a dedicated shared mailbox. User actions POST back to TD3 API callback routes authenticated via Entra ID-signed JWT from Microsoft's Actionable Messages service. Each card includes an auto-refresh hook so stale cards sitting in an inbox update to reflect current state on open (e.g., if another user already acted).
+
+
 ---
 
 ## Deployment

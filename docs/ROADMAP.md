@@ -27,7 +27,8 @@ TD3's core platform is live and operational:
 - Row-level database security on all business tables
 - Interactive dashboards with portfolio analytics and polymorphic reports
 - User preferences (theme, font size, reduced motion, default dashboard)
-- Activity tracking with device metadata and complete audit history
+- Unified activity log with admin feed, device metadata, and JSON diff view
+- Interactive Outlook email notifications (Adaptive Cards) for funding and payoff verification
 - Installable progressive web app with offline-capable assets
 
 ---
@@ -65,34 +66,20 @@ sequenceDiagram
 
 This eliminates manual document preparation, reduces turnaround time, and ensures every loan has a complete, tamper-evident document trail.
 
-### Microsoft Adaptive Cards
+### Microsoft Adaptive Cards (Outlook) — ✅ Shipped April 2026
 
-**What they are:** Adaptive Cards are a JSON-based interactive card format developed by Microsoft that renders natively in Teams, Outlook, and other Microsoft 365 surfaces. Instead of a plain notification email with a link, the recipient sees a rich, interactive card---with formatted data, action buttons, and input fields---rendered directly in their existing workflow tool.
+Interactive email notifications for workflow items that require action. Recipients can fund wires, verify payoffs, and more directly from Outlook without opening the TD3 web app.
 
-**Why they reduce context-switching:** The core value is eliminating the "notification → click link → wait for page load → find the right section → take action" loop. With Adaptive Cards, the relevant data and available actions are embedded directly in the notification. A bookkeeper can input a funding date without ever opening the TD3 interface. A processor can approve a draw from their Teams chat. The action travels back to TD3 via a webhook callback, and the platform state updates in real time.
 
-Enable workflow notifications and approvals directly within the team's existing communication tools. For details on the draw processing workflow these cards interact with, see [Technical Architecture: Draw Processing Workflow](ARCHITECTURE.md#draw-processing-workflow).
+**Shipped cards:**
+- **Funding Date Card** — sent to users with `fund_draws` permission when a wire batch is submitted. Bookkeeper inputs funded date and wire reference directly in Outlook.
+- **Payoff Verification Card** — sent to users with `approve_payoffs` permission when a payoff is approved. Verifier approves or rejects (with reason) from Outlook.
 
-**Key use cases:**
+Both cards auto-refresh when opened, so recipients always see current state even if another user already acted.
 
-- **Funding requests** -- Bookkeeper receives a card with builder name, amount, and account details. They input the funding date directly in the card, which feeds back to TD3.
-- **Payoff approvals** -- Approver reviews the payoff breakdown and approves or rejects with comments, without leaving Outlook or Teams.
-- **Draw notifications** -- Processor receives a summary card with flags and a quick-approve button, with a deep link to the full review page for complex cases.
-- **Status updates** -- Builders receive read-only cards showing draw progress, wire confirmation, and next steps---reducing inbound status inquiries.
+**How it works:** Cards are sent via Microsoft Graph from a dedicated shared mailbox. User actions route back to TD3 API callbacks authenticated via Entra ID-signed JWT from Microsoft's Actionable Messages service. An auto-refresh hook ensures stale cards update to current state when re-opened, so a recipient seeing a card five days later sees the latest status rather than the stale snapshot.
 
-**Integration mechanics:** When a triggering event occurs in TD3 (e.g., a draw moves to `pending_wire`), the system constructs an Adaptive Card JSON payload with the relevant data and sends it to a Microsoft webhook endpoint. The card renders in the recipient's Teams channel or Outlook inbox. When the user takes an action (clicks a button, inputs a date), the response is sent back to a TD3 API callback route, which validates the action, applies it to the database, and logs the activity.
-
-**M365 infrastructure requirements** (requested from CMIT April 2026):
-
-| Component | Details |
-|-----------|---------|
-| **Entra ID app registration** | `TD3` — with `Mail.Send` (Application) permission + admin consent |
-| **Dedicated sender mailbox** | `td3@tennantdevelopments.com` (shared mailbox, no license) |
-| **Azure Bot Service** | Free tier, linked to the Entra app registration. Outlook + Teams channels enabled |
-| **Entra role for Grayson** | Application Developer — allows ongoing redirect URI and client secret management |
-| **Actionable Messages provider** | Organization scope — registered via [developer dashboard](https://aka.ms/publishoam), requires Exchange Admin approval from CMIT |
-
-**Delivery paths:** Outlook receives cards via email (sent from the shared mailbox with Adaptive Card markup). Teams receives cards via Azure Bot Service. Both paths route user actions back to TD3 API callback routes for processing. Auth OTP delivery remains separate on `bot@mail.td3.tennantdevelopments.com` via Resend.
+**Future: Microsoft Teams delivery.** The current implementation is Outlook-only via email. Teams delivery would require an Azure Bot Service subscription. On the roadmap if adoption grows but not a priority for launch.
 
 ### Builder & Lender Portals
 
@@ -224,7 +211,7 @@ gantt
 
     section Integrations
     DocuSign Integration           :docusign, 2026-04-01, 21d
-    Microsoft Adaptive Cards       :cards, 2026-04-15, 28d
+    Microsoft Adaptive Cards       :done, cards, 2026-04-15, 3d
 
     section Portals
     Builder Portal                 :builder, 2026-07-01, 28d
