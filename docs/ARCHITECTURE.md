@@ -176,7 +176,20 @@ Interest and fees are computed in real time based on the loan terms and draw his
 - **Compound interest** accrues at month-end and at each draw funding event, compounding on the running balance.
 - **Fee escalation** follows a defined schedule: 2% flat for months one through six, increasing by 0.25% per month for months seven through twelve, a 5.9% extension fee at month thirteen, and an additional 0.4% per month thereafter.
 - **Per diem** is the daily interest on the total balance (principal plus accrued interest), used to calculate payoff amounts for specific dates.
-- **Finance fee** is the fee rate multiplied by total principal drawn (not the committed loan amount).
+- **Finance fee** is the fee rate multiplied by **total principal drawn (high-water mark)** — i.e. the maximum cumulative principal drawn over the loan's life, not the current outstanding balance and not the committed loan amount. Paydowns do not reduce the fee base.
+
+**Principal Paydowns**
+
+A loan can receive partial principal repayments from the borrower before final payoff. Paydowns are first-class events with their own table (`principal_paydowns`), captured on a per-event basis with a date, amount, and optional wire reference. They feed into the calculations as follows:
+
+- **Compound interest**: paydown events join draw events in the chronological accrual schedule. After each paydown, the running balance drops, so subsequent interest accrues on the lower base. Balance is clamped at zero, so an overpaid loan still produces a sensible projection.
+- **Finance fee**: unchanged. The fee base is the high-water mark of cumulative principal drawn, computed in a single pass through the merged event list. Paydowns do not lower this base — a borrower who draws $700k, pays down $200k, then redraws $100k still has a fee base of $700k.
+- **IRR**: each paydown contributes a positive cash inflow on its `paydown_date`. The Newton-Raphson IRR solver sees paydowns as money returned to the lender, which raises the effective return when paydowns happen early.
+- **Income breakdown**: when a payoff is recorded, total income equals `payoff_amount + sum(paydowns) − sum(funded_draws)`. The accrued-interest line is reduced by the time-weighted interest on each paydown for the days between paydown and payoff. The hold fee is unchanged (uses high-water mark).
+
+The payoff statement renders paydowns as a separate line below "Principal Balance" — both the gross drawn total and the negative paydown subtotal contribute transparently to the balance due. Paydowns are gated by the same `processor` permission as draws, lock once a payoff statement reaches `payoff_approved`, and write to the unified activity log on create and delete.
+
+The `record_principal_paydown` Postgres RPC handles the create flow inside a transaction with `SELECT ... FOR UPDATE` on the project row, preventing concurrent overpay attempts from each passing the outstanding-balance check.
 
 **Chart Dashboard**
 

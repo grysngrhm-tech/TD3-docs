@@ -27,6 +27,7 @@
 - [Payoff](#payoff)
 - [Payoff Adjustments](#payoff-adjustments)
 - [Per Diem](#per-diem)
+- [Principal Paydown](#principal-paydown)
 - [Project](#project)
 - [Retainage](#retainage)
 - [Row-Level Security](#row-level-security)
@@ -193,6 +194,16 @@ Credits and debits applied to the payoff statement that modify the final balance
 ### Per Diem
 
 The daily interest charge on a construction loan, calculated as the total balance (principal plus accrued compound interest) multiplied by the annual interest rate divided by 365. The per diem rate is shown on the payoff statement so that if funds are received after the statement's good-through date, each additional day's cost is clearly documented.
+
+---
+
+### Principal Paydown
+
+A partial principal repayment from borrower to lender made before final loan payoff. Paydowns reduce the outstanding principal balance going forward, which lowers subsequent compound interest accrual; they do **not** reduce the finance fee base, which is calculated on the maximum cumulative principal drawn over the life of the loan (the high-water mark). For IRR calculations, paydowns count as positive cash inflows on their actual paydown date.
+
+Paydowns are recorded through a "Record Paydown" action available to processors on active loans. Each paydown captures a date, amount, optional wire reference, and optional notes. Paydowns appear interleaved with draws in the loan's draw history (rendered with a green inflow chip), as line items beneath the Principal Balance row in the payoff statement, and as a footnote on the Income Breakdown card explaining the actual interest reduction. Paydowns are immutable once created — corrections happen by deleting and re-recording. Both create and delete are locked once a payoff statement reaches `payoff_approved` status, requiring the payoff to be revised first.
+
+> See [Architecture: Payoff Workflow](ARCHITECTURE.md#payoff-workflow) for how paydowns flow through interest, fee, and IRR calculations.
 
 ---
 
