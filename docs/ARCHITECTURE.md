@@ -93,7 +93,13 @@ Every construction loan progresses through three stages:
 - **Active** -- The loan is funded and in progress. Budgets are tracked, draws are processed, and compound interest accrues in real time. When a loan is ready for payoff, it follows a three-step approval workflow (approve, verify, complete) before transitioning to historic.
 - **Historic** -- The loan has been paid off. All data is preserved as an immutable record for performance analysis and auditing.
 
-The platform supports multiple builders and lenders, with each loan linking to a builder entity that carries banking information for wire transfers.
+The platform supports multiple builders, subdivisions, and lenders, with each loan linking to all three. Each entity has a dedicated management surface (`/builders/[id]`, `/subdivisions/[id]`, `/lenders/[id]`) where its details, defaults, and loan portfolio are viewable and editable. Cross-entity navigation is three-way: every loan grid on these pages links its rows to the corresponding project, builder, subdivision, and lender detail pages.
+
+### Loan-Term Inheritance and Signing-Time Lock
+
+Every loan has its effective interest rate, origination fee, and term resolved through a three-tier hierarchy: **project `_override`** column → **lender `default_*`** column → **system constant**. The resolver lives in `lib/loanTerms.ts::resolveEffectiveTerms` and feeds every downstream calculation (origination tab display, payoff projections, Adaptive Card payoff math, reports).
+
+**Critical legal constraint**: an interest rate in a signed loan agreement cannot legally change retroactively for one year from signing. To enforce this in the data model, every active and historic loan has its `interest_rate_override`, `origination_fee_pct_override`, and `loan_term_months_override` columns populated at signing — snapshotting whatever the lender's defaults were at that moment. As a result, editing a lender's `default_*` column only affects **new** loans (those without overrides yet); existing loans are immune. The Lender Loan Defaults card surfaces this constraint with a confirmation modal on every save plus messaging that explicitly notes existing loans are unaffected.
 
 ### Budget Intelligence
 
