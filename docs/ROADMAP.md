@@ -1,6 +1,6 @@
 # TD3 Development Roadmap
 
-**Last Updated:** February 2026
+**Last Updated:** April 2026
 
 ---
 
@@ -30,6 +30,7 @@ TD3's core platform is live and operational:
 - Unified activity log with admin feed, device metadata, and JSON diff view
 - Interactive Outlook email notifications (Adaptive Cards) for funding and payoff verification
 - Installable progressive web app with offline-capable assets
+- Polymorphic homepage combining entity search, contextual header, and personal work queue into a single working surface
 
 ---
 
@@ -80,6 +81,28 @@ Both cards auto-refresh when opened, so recipients always see current state even
 **How it works:** Cards are sent via Microsoft Graph from a dedicated shared mailbox. User actions route back to TD3 API callbacks authenticated via Entra ID-signed JWT from Microsoft's Actionable Messages service. An auto-refresh hook ensures stale cards update to current state when re-opened, so a recipient seeing a card five days later sees the latest status rather than the stale snapshot.
 
 **Future: Microsoft Teams delivery.** The current implementation is Outlook-only via email. Teams delivery would require an Azure Bot Service subscription. On the roadmap if adoption grows but not a priority for launch.
+
+### Polymorphic Homepage — ✅ Shipped April 2026
+
+A single working surface that unifies entity search, contextual stat cards, and a personal work queue. Replaces the previous practice of landing users on the firm-wide dashboard (now at `/portfolio`) with a home view tailored to each user's attention.
+
+For the full architecture and file layout, see [Homepage](HOMEPAGE.md).
+
+**What the homepage is for:**
+
+- **Find anything fast.** Typing in the hero search returns matches across nine entity types — projects, builders, subdivisions, lenders, draws, wires, invoices, documents, users. Relevance-ranked, permission-scoped. ⌘K / Ctrl+K focuses the input from anywhere on the page.
+- **See what's happening without opening a detail page.** The polymorphic header under the search bar morphs into a per-entity stat card as the user types or pins an item. A project shows committed / drawn / remaining / last-draw at a glance. A builder shows active-loan count / committed / drawn YTD / historic count. Nine templates in total, one per entity type, swapped with a 180ms cross-fade so the UI never jumps.
+- **Act on what needs attention.** The personal work queue at the bottom surfaces items waiting for the user — payoffs to verify, wires to fund, draws to review, documents about to expire, invoice matches needing a confidence check. Items are grouped by urgency, filterable by kind, and marked with a "N new since last visit" pill so the user can tell what's genuinely fresh from what they've already seen.
+
+**How the three pillars work together:**
+
+Most actions don't require navigating away from the homepage. Typing in search previews the top match in the polymorphic header — arrow down to different results, the header follows. Clicking a queue row pins that entity into the header, so the user can see the stats for the item they're about to action and decide whether to open it or pivot to something else. A "most recent wins" rule governs who owns the header at any moment: typing overrides a pin, pinning overrides typing, clearing returns to the user's personal portfolio summary.
+
+**Slash commands.** Typing `/` as the first character switches the dropdown from entity results to a command palette. Twenty-seven commands across navigation, creation, context-aware actions, work-queue filters, and utility. Four navigation commands accept inline arguments, so `/builder curtis` surfaces matching builders as selectable sub-rows. Context commands only appear when an entity is pinned — `/open` navigates to it, `/history` pulls up its audit trail, `/loans` filters the portfolio to a pinned builder or lender.
+
+**Work queue aggregation.** Queue items come from two sources: event-driven Postgres triggers that fire inline with the underlying state change (wire submitted → alert funders, payoff approved → alert verifiers), and an hourly aggregator cron that sweeps documents within 30 days of expiry and broadcasts alerts to every active processor. When any recipient of a broadcast item acknowledges it, a cascade RPC auto-resolves every other user's copy — one click clears the shared work item for the whole team without requiring a manual assignment schema.
+
+**Header notifications bell.** The bell in the top chrome shares the same queue data. On the homepage, clicking a bell row pins the entity into the polymorphic header without navigating — it's a zero-friction way to jump into context for something you're about to act on. Off the homepage, the bell navigates as before. The unread count stays in sync between bell and homepage queue via a cross-surface event bus, so reading in one drops the badge in the other without a round-trip.
 
 ### Builder & Lender Portals
 
