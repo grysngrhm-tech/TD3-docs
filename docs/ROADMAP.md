@@ -23,12 +23,14 @@ TD3's core platform is live and operational:
 - Draw request processing with automated validation and flagging
 - Wire batch funding with consolidated builder payments and audit trail
 - Invoice AI extraction and deterministic matching with learning system
-- Passwordless authentication with pre-authorized access and stackable permissions
-- Row-level database security on all business tables
+- Passwordless authentication with pre-authorized access and layered permissions (4 staff codes + builder portal)
+- Builder portal — external builders see and act on their own loans / draws via permission-scoped access to the shared codebase (no parallel app)
+- Row-level database security on all business tables, with disjunctive policies that scope builder users to their own data
 - Interactive dashboards with portfolio analytics and polymorphic reports
 - User preferences (theme, font size, reduced motion, default dashboard)
 - Unified activity log with admin feed, device metadata, and JSON diff view
-- Interactive Outlook email notifications (Adaptive Cards) for funding and payoff verification
+- Four-layer notification pipeline: SQL trigger → outbox → resolver → channel router → in-app + email handlers, with per-user channel preferences and admin-controlled routing rules
+- Outlook Adaptive Cards as one channel of the unified pipeline — five cards across action notifications (Funding Date, Payoff Verification) and informational notifications (Draw Review, Wire Funded, Payoff Completed)
 - Installable progressive web app with offline-capable assets
 - Polymorphic homepage combining entity search, contextual header, and personal work queue into a single working surface
 
@@ -72,16 +74,34 @@ This eliminates manual document preparation, reduces turnaround time, and ensure
 Interactive email notifications for workflow items that require action. Recipients can fund wires, verify payoffs, and more directly from Outlook without opening the TD3 web app.
 
 
-**Shipped cards:**
+**Initial cards shipped:**
 - **Funding Date Card** — sent to users with `fund_draws` permission when a wire batch is submitted. Bookkeeper inputs funded date and wire reference directly in Outlook.
 - **Payoff Verification Card** — sent to users with `approve_payoffs` permission when a payoff is approved. Verifier approves or rejects (with reason) from Outlook.
-- **Draw Review Card** — sent to users with `processor` permission when a builder submits a draw for review. Processor approves, requests revisions (with note), or rejects (with reason) from Outlook.
+- **Draw Review Card** — sent to users with `processor` permission when a builder submits a draw for review. Originally exposed approve / request revisions / reject actions inline; redesigned to informational-only in Cards v2 (see below) so processors review attached invoices and budget context in TD3.
 
-All three cards auto-refresh when opened, so recipients always see current state even if another user already acted.
+The action cards (Funding Date, Payoff Verification) auto-refresh when opened, so recipients always see current state even if another user already acted.
 
-**How it works:** Cards are sent via Microsoft Graph from a dedicated shared mailbox. User actions route back to TD3 API callbacks authenticated via Entra ID-signed JWT from Microsoft's Actionable Messages service. An auto-refresh hook ensures stale cards update to current state when re-opened, so a recipient seeing a card five days later sees the latest status rather than the stale snapshot. Cards are now one channel of the unified V2 notification pipeline (see [PERMISSIONS_NOTIFICATIONS_V2.md](PERMISSIONS_NOTIFICATIONS_V2.md)) — the same trigger that creates an in-app notification renders the card for users with an Outlook mailbox.
+**How it works:** Cards are sent via Microsoft Graph from a dedicated shared mailbox. User actions on action cards route back to TD3 API callbacks authenticated via Entra ID-signed JWT from Microsoft's Actionable Messages service. An auto-refresh hook ensures stale cards update to current state when re-opened, so a recipient seeing a card five days later sees the latest status rather than the stale snapshot. Cards are now one channel of the unified V2 notification pipeline (see [PERMISSIONS_NOTIFICATIONS_V2.md](PERMISSIONS_NOTIFICATIONS_V2.md)) — the same trigger that creates an in-app notification renders the card for users with an Outlook mailbox.
 
 **Future: Microsoft Teams delivery.** The current implementation is Outlook-only via email. Teams delivery would require an Azure Bot Service subscription. On the roadmap if adoption grows but not a priority for launch.
+
+### Cards v2 — ✅ Shipped April 2026
+
+A substantial redesign of the three existing Adaptive Cards plus two new informational cards, organized around a new architectural distinction between **action notifications** (where the email IS the action surface) and **informational notifications** (status updates, user-toggleable).
+
+**Action cards** (email required, server-enforced + UI-locked):
+
+- **Funding Date Card** — bookkeeper marks the wire funded inline. Banking data is now masked to last-4 digits (was full plaintext). Three Action.ShowCard expanders surface deeper context on demand: per-draw breakdown, builder context, and per-loan utilization effect of funding.
+- **Payoff Verification Card** — verifier approves or rejects the payoff inline. Adds a Finance Fee derivation table that walks tier-by-tier through the legal fee schedule, a per-draw interest schedule, and a full loan summary with IRR and days early or late.
+
+**Informational cards** (user-toggleable, no inline state changes):
+
+- **Draw Review Card** — actions stripped per design feedback. Now a rich preview: health summary, line items table, invoice manifest. Single "Open in TD3" CTA.
+- **Wire Funded Card (NEW)** — closure email for the builder when their wire clears. Per-draw breakdown plus post-funding loan balances.
+- **Payoff Completed Card (NEW)** — celebratory closure email when a loan pays off. Full loan summary with start date, duration, high-water mark, total interest, total finance fee, and paydowns. Lien release timing note.
+
+For builder-targeted events (resolved via the `entity_member` audience), the fallback HTML is the user experience — most builders use Gmail or Outlook.com, which don't render Adaptive Cards. Both new informational cards have polished HTML designs as first-class deliverables, not degraded card variants.
+
 
 ### Polymorphic Homepage — ✅ Shipped April 2026
 
@@ -119,7 +139,7 @@ Most actions don't require navigating away from the homepage. Typing in search p
 
 **Architecture:** Rather than building a parallel app, the builder portal reuses TD3's existing builder, project, and draw pages — gated by a new `builder_portal` permission and scoped by a `builder_members` table. Row-level security enforces data isolation: a builder sees only loans tied to a builder they're a member of. Pages outside their scope (`/portfolio`, `/staging`, `/admin/*`) bounce them back to their builder home via a permission redirect. Internal-only fields on shared pages (IRR, lender financials, processor notes, AI confidence scores) are wrapped in an `<InternalOnly>` component that hides them from non-staff viewers. One codebase, no duplication.
 
-**Builder-submitted draw lifecycle:** Builder drafts go through a review state (`submitted_for_review`) before flowing into the existing wire batch pipeline. Processors see the new draw in their queue + as an Outlook Adaptive Card with Approve / Request Changes / Reject actions. Builders see status updates and any revision notes back in the same draw page they created.
+**Builder-submitted draw lifecycle:** Builder drafts go through a review state (`submitted_for_review`) before flowing into the existing wire batch pipeline. Processors see the new draw in their queue + as an informational Outlook Adaptive Card (rich preview of the draw with health summary, line items, and invoice manifest) — review actions happen in TD3 where the processor can open invoice PDFs and cross-reference budget context. Builders see status updates and any revision notes back in the same draw page they created.
 
 For the full design — schema, RLS pattern, state machine, edge cases, and migration sequencing — see [PERMISSIONS_NOTIFICATIONS_V2.md](PERMISSIONS_NOTIFICATIONS_V2.md).
 
@@ -234,6 +254,7 @@ gantt
     section Integrations
     DocuSign Integration           :docusign, 2026-04-01, 21d
     Microsoft Adaptive Cards       :done, cards, 2026-04-15, 3d
+    Cards v2 (redesign + new cards) :done, cardsv2, 2026-04-23, 1d
 
     section Portals
     Builder Portal                 :done, builder, 2026-04-23, 1d

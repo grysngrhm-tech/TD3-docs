@@ -52,7 +52,9 @@ Sessions are tracked server-side with automatic timeouts after periods of inacti
 
 **The risk:** In construction lending, different people play different roles. A loan processor entering draw data should not have the authority to release funds. Without clear separation of duties, a single compromised account could manipulate both the data and the money.
 
-**What TD3 does:** TD3 enforces a **four-capability permission model** with strict separation of duties. Permissions are stackable --- each user receives only the capabilities their role requires:
+**What TD3 does:** TD3 enforces a **layered permission model** with strict separation of duties. Permissions fall into two layers that compose at the database level:
+
+**Staff capabilities** (firm-wide TD3 roles, stackable — each user holds only the capabilities their role requires):
 
 | Capability | What It Grants |
 |---|---|
@@ -61,7 +63,15 @@ Sessions are tracked server-side with automatic timeouts after periods of inacti
 | **Approve Payoffs** | Authorize loan payoff actions |
 | **Manage Users** | Control the access list and assign permissions to other users |
 
-A user can hold any combination of these capabilities. Critically, the person processing a draw is not necessarily the person authorized to fund it --- this separation is enforced at every level of the system, not just the interface.
+**Builder Portal** (external builder team access, scoped to specific builders):
+
+| Capability | What It Grants |
+|---|---|
+| **Builder Portal** | Sign in as an external builder user. Scoped to one or more specific builders via the `builder_members` table — the user sees only loans, draws, and documents tied to a builder they're a member of. Does not grant any staff capability. |
+
+A user can hold any combination of staff capabilities. Critically, the person processing a draw is not necessarily the person authorized to fund it --- this separation is enforced at every level of the system, not just the interface.
+
+**Builder users are fully isolated.** A builder team member with only the Builder Portal capability can see their own builder page, their loan details, and their draw history, but cannot see other builders' loans, cannot access the portfolio dashboard or wire staging, and cannot read internal-only fields (IRR, lender financials, processor notes, AI confidence scores) even on pages they can visit. Isolation is enforced by row-level security at the database and by interface gating at the application, independently — a direct API call by a builder user against another builder's data is rejected by the database regardless of what the application renders.
 
 ```mermaid
 flowchart TB
@@ -95,10 +105,12 @@ flowchart TB
 
 This means:
 
-- **Read operations** on business data require an authenticated session.
-- **Write operations** (creating or modifying projects, budgets, draws, and invoices) require the Process Loans capability.
+- **Read operations** on business data require an authenticated session. For shared tables (projects, draws, builders, documents), the access policy combines the two permission layers disjunctively: staff see every row; builder users see only rows tied to a builder they're a member of.
+- **Write operations** (creating or modifying projects, budgets, draws, and invoices) require the Process Loans capability. Builder users can create draft draws on their own loans and submit them for review, but cannot bypass processor approval or write to any other builder's records.
 - **Funding operations** (marking draws or wire batches as funded) require the Fund Draws capability, enforced by both the access policy and a secondary database-level trigger that acts as a backup check.
 - **Administrative operations** (managing the access list and user permissions) require the Manage Users capability for all operations, including viewing the list.
+
+**Banking data is masked by default.** Builder bank routing and account numbers are stored in full for the bookkeeper's wire workflow, but every other rendering surface — Adaptive Cards, fallback HTML emails, and most in-app views — shows only the last four digits through dedicated generated columns. The plaintext values are only accessible on the wire staging page (where the bookkeeper actually initiates wires) and on the builder-owned BuilderInfoCard. This keeps full banking numbers out of inboxes, screenshots, and any report exported for external review.
 
 Even if the application interface were completely bypassed, the database would independently reject any unauthorized operation. The application and the database each enforce the full permission model --- two independent gatekeepers, not one.
 
@@ -117,6 +129,7 @@ The audit trail supports:
 - **Compliance reviews** --- Trace any funded amount back through the complete decision chain, from initial data entry through final wire confirmation.
 - **Dispute resolution** --- Determine exactly who approved a draw, when it was funded, and what supporting documentation was attached.
 - **Historical reconstruction** --- Recreate the state of any loan at any point in its lifecycle using the recorded action history.
+- **Notification auditability** --- A separate `notification_deliveries` table is the source of truth for "have we already sent this notification?" — it records every send, suppression, and failure with a unique key per (user, channel, event). Administrators can answer "did that payoff verification email actually go out?" without grepping logs, and the dispatcher uses the same table to guarantee that re-claimed outbox rows never double-fire emails or queue items.
 
 ---
 

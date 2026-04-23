@@ -473,16 +473,25 @@ Financial values receive dynamic emphasis:
 | $100,000 - $1,000,000 | Bold + slightly larger |
 | > $1,000,000 | Bold + accent color + gold tint |
 
-### 7.5 Role-Based Adaptations (Future)
+### 7.5 Role-Based Adaptations
 
 | Role | Interface Emphasis |
 |------|-------------------|
 | **Admin** | Full feature access, system controls visible |
-| **Lender** | Portfolio focus, approval workflows prominent |
+| **Lender** | Portfolio focus, approval workflows prominent (future portal) |
 | **Bookkeeper** | Financial data emphasis, wire actions highlighted |
-| **Builder** | Draw submission simplified, status tracking central |
+| **Builder** | Draw submission simplified, status tracking central (shipped April 2026) |
 
-See the [Roadmap](ROADMAP.md#builder--lender-portals) for upcoming role-specific interfaces.
+**The internal / builder boundary.** Rather than building parallel apps, TD3 uses a single codebase where builder team members see the same `/builders/[id]`, `/projects/[id]`, and `/draws/[id]` pages that staff see — with internal-only content selectively hidden. The canonical staff permission set (`STAFF_PERMISSIONS` in `lib/supabase.ts`: `processor`, `fund_draws`, `approve_payoffs`, `users.manage`) is the line between "internal" and "builder" rendering.
+
+Two mechanisms enforce the boundary:
+
+- **`<InternalOnly>`** — the canonical wrapper for any field, section, or control that should only render for staff. Used for IRR, lender fee rates, processor notes, AI confidence scores, performance-comparison cards, and quartile rankings. Sugar over `<PermissionGate>` with `STAFF_PERMISSIONS`. When a builder user views a shared page, wrapped content simply isn't in the DOM — not disabled, not hidden via CSS, not there at all.
+- **`useStaffOnlyRedirect`** — the page-level equivalent. Every staff-only top-level route (`/portfolio`, `/staging`, `/admin/*`, `/reports`, `/lenders/*`, `/subdivisions/*`, the polymorphic homepage at `/`) calls this hook so a URL-guessing builder bounces back to their builder home before any data renders.
+
+The effect is one visual language, polymorphically scoped. A builder sees a clean, focused version of the same page a processor sees — same layout, same typography, same spacing — minus the internal financial metadata. This is consistent with the "controls you cannot perform are completely hidden, not grayed out" principle from [Security: Interface Adaptation](SECURITY.md#interface-adaptation).
+
+See the [Roadmap](ROADMAP.md) for the Builder Portal feature scope and [PERMISSIONS_NOTIFICATIONS_V2.md](PERMISSIONS_NOTIFICATIONS_V2.md) for the underlying permission model.
 
 ---
 
@@ -550,9 +559,12 @@ Minimum touch target size: **44x44px** for all interactive elements.
 
 See the [Development Roadmap](ROADMAP.md) for detailed timelines on features that will require new design patterns:
 
-- **Builder Portal** — Simplified interface for external builders to view loans and submit draws
-- **Lender Portal** — Read-only portfolio view for lending partners
+- **Lender Portal** — Read-only portfolio view for lending partners (same `<InternalOnly>` / permission-scoping pattern as the Builder Portal, tuned for the lender audience)
 - **Mobile Inspection App** — Touch-optimized interface for field inspections and photo capture
+
+Shipped April 2026:
+
+- **Builder Portal** — simplified interface for external builders, implemented as role-adaptive gating on the existing builder / project / draw pages rather than a parallel app. See §7.5 for the `<InternalOnly>` + `useStaffOnlyRedirect` pattern.
 
 ## Related Documentation
 

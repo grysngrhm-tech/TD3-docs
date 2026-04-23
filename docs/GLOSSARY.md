@@ -6,10 +6,12 @@
 
 ## Table of Contents
 
+- [Action Card / Action Notification](#action-card--action-notification)
 - [Adaptive Card](#adaptive-card)
 - [Amortization](#amortization)
 - [Audience-Scoped Dedup Key](#audience-scoped-dedup-key)
 - [Auto-Approved](#auto-approved)
+- [bank_routing_last4 / bank_account_last4](#bank_routing_last4--bank_account_last4)
 - [Builder](#builder)
 - [builder_member](#builder_member)
 - [builder_portal](#builder_portal)
@@ -22,9 +24,11 @@
 - [Dispatcher](#dispatcher)
 - [Draw Request](#draw-request)
 - [Draw Status](#draw-status)
+- [email_required](#email_required)
 - [Extraction](#extraction)
 - [Fee Escalation](#fee-escalation)
 - [Funded](#funded)
+- [Informational Card / Informational Notification](#informational-card--informational-notification)
 - [InternalOnly](#internalonly)
 - [IRR (Internal Rate of Return)](#irr-internal-rate-of-return)
 - [Lender](#lender)
@@ -49,9 +53,16 @@
 
 ---
 
+### Action Card / Action Notification
+
+A notification whose email body carries inline state-changing buttons — the email IS the action surface. Implemented as an Outlook Adaptive Card with `Action.Http` buttons whose callbacks execute the underlying workflow (mark wire funded, verify or reject payoff) without requiring the recipient to open TD3. Marked with `email_required=true` in `notification_events`; the channel router force-enables the email channel server-side and the `/account/notifications` UI mirrors the lock by rendering the email checkbox disabled. Examples: Funding Date Card, Payoff Verification Card.
+
+
+---
+
 ### Adaptive Card
 
-Outlook-renderable interactive email card. Recipients act inline (approve a payoff, mark a wire funded, review a builder's draw) without opening TD3. One channel of the V2 notification pipeline; sent only to internal staff for events that have a `card_builder` registered.
+Outlook-renderable interactive email card. Recipients act inline (approve a payoff, mark a wire funded) or read a rich preview (draw review, wire funded closure, payoff completed closure) without opening TD3. One channel of the V2 notification pipeline; sent only to internal staff matched via a `permission` rule. Builder recipients (matched via `entity_member`) receive the fallback HTML instead.
 
 
 ---
@@ -77,6 +88,12 @@ Format `{event_code}:{entity_id}:audience={label}` used in `notification_deliver
 An AI invoice match with 95% or higher confidence that is applied automatically without human review. Auto-approved matches are skipped in the review queue entirely and logged in the audit trail as automatic decisions. This tier handles clear, unambiguous vendor-to-category alignments where the AI's certainty is comparable to a human expert's.
 
 > See [Artificial Intelligence](ARTIFICIAL_INTELLIGENCE.md#confidence-gated-automation) for details.
+
+---
+
+### bank_routing_last4 / bank_account_last4
+
+Generated columns on the `builders` table storing the last 4 digits of the bank routing and account numbers. Used by Adaptive Cards, fallback HTML emails, and most in-app views for safe display. The plaintext columns (`bank_routing_number`, `bank_account_number`) are restricted to `/staging` (the bookkeeper's wire processing page) and the BuilderInfoCard (where the builder owns their own data). Keeps full banking numbers out of inboxes that get forwarded, screenshotted, or scanned.
 
 ---
 
@@ -112,7 +129,7 @@ Categorized line items that define the expected cost structure of a construction
 
 ### CARD_BUILDERS
 
-Registry in `lib/adaptive-cards/index.ts` mapping `notification_events.card_builder` keys (`funding_date_card`, `payoff_verification_card`, `draw_review_card`) to async card-building functions. The V2 dispatcher's email channel looks up the builder by key, calls it with the event payload, and hands the resulting card JSON to `sendAdaptiveCardEmail`.
+Registry in [`lib/adaptive-cards/index.ts`](../lib/adaptive-cards/index.ts) mapping `notification_events.card_builder` keys to async card-building functions. Five builders ship today: `funding_date_card`, `payoff_verification_card` (action cards); `draw_review_card`, `wire_funded_card`, `payoff_completed_card` (informational cards). The V2 dispatcher's email channel looks up the builder by key, calls it with the event payload, and hands the resulting card JSON + fallback HTML to `sendAdaptiveCardEmail`.
 
 ---
 
@@ -168,6 +185,14 @@ The current stage of a draw request in the approval pipeline. TD3 uses four stat
 
 ---
 
+### email_required
+
+Boolean column on `notification_events`. When `true`, the channel router force-enables the email channel for that event regardless of the recipient's `user_notification_preferences`. Reserved for action notifications whose Adaptive Card carries inline state-changing buttons — suppressing email on those would strand the action behind a TD3 login the user may not check in time. The `/account/notifications` UI mirrors the server-side enforcement by rendering the email checkbox disabled+checked for `email_required` events.
+
+> See [Permissions & Notifications V2](PERMISSIONS_NOTIFICATIONS_V2.md) §9.4 and [`lib/notifications/channelRouter.ts`](../lib/notifications/channelRouter.ts).
+
+---
+
 ### Extraction
 
 The AI process of reading an uploaded invoice PDF and converting it into structured data---vendor name, amount, invoice number, date, line item descriptions, trade classification, and work context. TD3 uses a model optimized for high-volume document parsing, processing invoices asynchronously so the user can continue working while extraction runs in the background.
@@ -192,6 +217,13 @@ The final status of a draw request or wire batch, indicating that funds have bee
 
 ---
 
+### Informational Card / Informational Notification
+
+A notification whose rendering is a rich status update or preview without state-changing actions. The recipient can act on the underlying entity later in TD3 if desired; nothing happens inside the email. Marked with `email_required=false` in `notification_events` so users control the email channel via `/account/notifications`. Examples: Draw Review (Cards v2 stripped the action buttons), Wire Funded (closure message when the wire clears), Payoff Completed (closure message when a loan pays off).
+
+
+---
+
 ### InternalOnly
 
 `<InternalOnly>` component in [`app/components/auth/InternalOnly.tsx`](../app/components/auth/InternalOnly.tsx). Sugar over `<PermissionGate>` with `STAFF_PERMISSIONS`. The canonical wrapper for any internal data (IRR, lender financials, processor notes, AI confidence scores, performance comparisons) that appears on shared pages where builder users land.
@@ -208,7 +240,7 @@ The annualized effective rate of return on a construction loan, accounting for t
 
 The financial institution funding the construction loan. Each lender is linked to one or more projects in TD3, and lender-specific data includes loan terms, interest rates, and reporting requirements. The upcoming lender portal will provide read-only access to portfolio views, loan summaries, and exportable reports.
 
-> See [Roadmap](ROADMAP.md#builder--lender-portals) for details on the planned lender portal.
+> See [Roadmap: Lender Portal](ROADMAP.md#lender-portal) for details on the planned lender portal.
 
 ---
 

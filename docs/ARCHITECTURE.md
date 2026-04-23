@@ -136,7 +136,7 @@ Draw requests follow a structured lifecycle. Two entry paths exist depending on 
 
 Once approved, draws are grouped by builder into wire batches. The batch is sent to the bookkeeper for wire processing with a detailed funding report. Once the wire is confirmed, budget spent amounts are atomically updated and the draw is locked as an immutable record.
 
-The state machine and per-state edit/transition permissions are encoded in `lib/drawLifecycle.ts`. Shared transition helpers in `lib/drawTransitions.ts` are idempotent (re-submitting an already-submitted draw returns `alreadyInState`) and are reused by both the in-app API routes and Adaptive Card callbacks.
+The state machine and per-state edit/transition permissions are encoded in `lib/drawLifecycle.ts`. Shared transition helpers in `lib/drawTransitions.ts` are idempotent (re-submitting an already-submitted draw returns `alreadyInState`). Since Cards v2 (April 2026), the draw review flow runs through the in-app UI only — the draw review Adaptive Card is informational and sends the processor to TD3 to review rather than exposing Approve / Request Changes / Reject actions inline. Responsible review requires looking at invoice PDFs and budget context that don't fit in a card.
 
 > For details on how AI handles invoice matching during the validation step, see [Invoice-to-Budget Matching](ARTIFICIAL_INTELLIGENCE.md#invoice-to-budget-matching). For the full builder portal model, see [PERMISSIONS_NOTIFICATIONS_V2.md](PERMISSIONS_NOTIFICATIONS_V2.md).
 
@@ -265,6 +265,8 @@ TD3's comprehensive security architecture is documented in the dedicated [Securi
 
 Permissions are layered: four global staff codes (`processor`, `fund_draws`, `approve_payoffs`, `users.manage`) plus a fifth code (`builder_portal`) that marks external builder users. Builder users are scoped to specific builders via the `builder_members` table, and row-level security combines the two layers disjunctively — staff see all rows; builders see only data tied to a builder they're a member of. The interface adapts to each user's permission set: controls and actions a user cannot perform are hidden rather than disabled, and pages outside their scope redirect them home. For details on role-adaptive design patterns, see the [Design Language: Polymorphic Behaviors](DESIGN_LANGUAGE.md#7-polymorphic-behaviors).
 
+**Banking data is masked by default.** Builder bank routing and account numbers are stored in full in the `builders` table for the bookkeeper's wire workflow, but every other rendering surface — Adaptive Cards, fallback HTML emails, and most in-app views — reads the generated `bank_routing_last4` / `bank_account_last4` columns instead. The plaintext values are only shown on `/staging` (the bookkeeper's wire processing page) and on the BuilderInfoCard (where the builder owns their own data). This keeps numbers out of inboxes that get forwarded, screenshotted, or scanned by enterprise security tooling.
+
 ---
 
 ## Data Architecture
@@ -304,6 +306,23 @@ Every workflow event that needs to reach a user — wire batch pending, payoff a
 4. **Delivery handlers.** Two channels are implemented today: in-app (upserts to the queue surfaced in the bell and homepage workqueue) and email. The email handler decides per-recipient: internal staff with an Outlook mailbox get an interactive Adaptive Card; external builders get a plain HTML email with deep-link buttons to the web app.
 
 Every send writes to `notification_deliveries`, which is the source of truth for "have we already sent this." The dispatcher checks it before invoking any handler, so duplicate emails or queue items can't happen even if the outbox row gets re-claimed after a worker crash. Audience-scoped dedup keys (`{event}:{entity}:audience={label}`) ensure cascade resolution doesn't cross audience boundaries when one user reads a notification.
+
+**Two notification shapes.** Each event in `notification_events` carries an `email_required` flag that splits the catalog into two classes:
+
+- **Action notifications** — the email IS the action surface. Inline buttons in the rendered Adaptive Card let recipients act (mark a wire funded, verify or reject a payoff) without opening TD3. The email channel is required: the channel router force-enables it server-side regardless of user preference, and the `/account/notifications` UI mirrors the override by rendering the email checkbox disabled. Suppressing email on these events would strand the action behind a TD3 login the user may not check in time.
+- **Informational notifications** — status updates the user can act on later in TD3 if desired. The email channel is optional and toggleable per-user; the `in_app` channel is always available via the bell + workqueue.
+
+Five Adaptive Card variants ship today, registered in [`lib/adaptive-cards/index.ts`](../lib/adaptive-cards/index.ts):
+
+| Card | Event | Class |
+|---|---|---|
+| Funding Date | `wire.pending` | Action |
+| Payoff Verification | `payoff.awaiting_verification` | Action |
+| Draw Review | `draw.submitted_for_review` | Informational |
+| Wire Funded | `wire.funded` | Informational |
+| Payoff Completed | `payoff.completed` | Informational |
+
+Adaptive Cards are one channel of this unified pipeline, not a parallel system. The same trigger that creates an in-app queue item also feeds the email/card render. The email channel handler ([`lib/notifications/channels/email.ts`](../lib/notifications/channels/email.ts)) renders an Adaptive Card only when the recipient is internal staff (matched via a `permission` rule and holding an `@tennantdevelopments.com` mailbox). Builder recipients (matched via `entity_member`) always receive the rich fallback HTML — designed as a first-class deliverable, since most builders use Gmail or Outlook.com which don't render Adaptive Cards.
 
 
 ---
