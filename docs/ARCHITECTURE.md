@@ -119,23 +119,26 @@ The Progress Budget Report provides both table and chart views of budget data. T
 
 ```mermaid
 flowchart LR
-    A[Upload Draw] --> B[AI Match & Validate]
-    B --> C[Review & Approve]
-    C --> D[Stage for Funding]
+    A[Draft] --> B[Submitted for Review]
+    A --> D[Approved]
+    B --> C[Revisions Requested]
+    C --> A
+    B --> D
+    B --> R[Rejected]
     D --> E[Wire Batch]
     E --> F[Funded]
 ```
 
-Draw requests follow a structured workflow:
+Draw requests follow a structured lifecycle. Two entry paths exist depending on the actor:
 
-1. **Upload** -- The draw spreadsheet is imported and individual line items are created.
-2. **AI Match & Validate** -- Each line item is fuzzy-matched to the corresponding budget category. Validation flags are generated for issues such as over-budget requests, missing invoices, or unmatched categories.
-3. **Review & Approve** -- A processor reviews flagged items, adjusts amounts, and approves the draw.
-4. **Stage for Funding** -- Approved draws are grouped by builder into wire batches.
-5. **Wire Batch** -- The batch is sent to the bookkeeper for wire processing with a detailed funding report.
-6. **Funded** -- Once the wire is confirmed, budget spent amounts are atomically updated and the draw is locked as an immutable record.
+- **Staff path**: a processor uploads or creates a draw and approves it directly (`draft → approved`), bypassing the review step.
+- **Builder path**: a builder team member creates a draft on a loan they have access to, uploads invoices, and submits it for processor review (`draft → submitted_for_review`). The processor can approve, request revisions (which sends the draw back to draft with a note), or reject (terminal).
 
-> For details on how AI handles invoice matching during the validation step, see [Invoice-to-Budget Matching](ARTIFICIAL_INTELLIGENCE.md#invoice-to-budget-matching).
+Once approved, draws are grouped by builder into wire batches. The batch is sent to the bookkeeper for wire processing with a detailed funding report. Once the wire is confirmed, budget spent amounts are atomically updated and the draw is locked as an immutable record.
+
+The state machine and per-state edit/transition permissions are encoded in `lib/drawLifecycle.ts`. Shared transition helpers in `lib/drawTransitions.ts` are idempotent (re-submitting an already-submitted draw returns `alreadyInState`) and are reused by both the in-app API routes and Adaptive Card callbacks.
+
+> For details on how AI handles invoice matching during the validation step, see [Invoice-to-Budget Matching](ARTIFICIAL_INTELLIGENCE.md#invoice-to-budget-matching). For the full builder portal model, see [PERMISSIONS_NOTIFICATIONS_V2.md](PERMISSIONS_NOTIFICATIONS_V2.md).
 
 ### Wire Batch Funding
 
@@ -258,9 +261,9 @@ For the full AI reference---including model selection rationale, confidence thre
 
 ## Security Model
 
-TD3's comprehensive security architecture is documented in the dedicated [Security](SECURITY.md#overview) guide, covering authentication, the four-capability permission model, data-level enforcement, audit trail, AI security guardrails, and infrastructure security.
+TD3's comprehensive security architecture is documented in the dedicated [Security](SECURITY.md#overview) guide, covering authentication, the permission model, data-level enforcement, audit trail, AI security guardrails, and infrastructure security.
 
-The interface adapts to each user's permission set---controls and actions that a user cannot perform are hidden rather than disabled, keeping the experience clean and focused. For details on role-adaptive design patterns, see the [Design Language: Polymorphic Behaviors](DESIGN_LANGUAGE.md#7-polymorphic-behaviors).
+Permissions are layered: four global staff codes (`processor`, `fund_draws`, `approve_payoffs`, `users.manage`) plus a fifth code (`builder_portal`) that marks external builder users. Builder users are scoped to specific builders via the `builder_members` table, and row-level security combines the two layers disjunctively — staff see all rows; builders see only data tied to a builder they're a member of. The interface adapts to each user's permission set: controls and actions a user cannot perform are hidden rather than disabled, and pages outside their scope redirect them home. For details on role-adaptive design patterns, see the [Design Language: Polymorphic Behaviors](DESIGN_LANGUAGE.md#7-polymorphic-behaviors).
 
 ---
 
@@ -291,11 +294,16 @@ Each row carries:
 
 The unified log replaces an earlier two-table design (`audit_events` + `user_activity`) with a single source of truth that powers both compliance audit and user-facing activity feeds. The admin activity feed at `/admin/activity` provides filtering by actor type, action, entity, user, and date range, along with a JSON diff viewer for comparing pre/post-mutation state.
 
-### Interactive Email Notifications (Adaptive Cards)
+### Notification Pipeline
 
-TD3 sends interactive Adaptive Cards to Outlook inboxes for workflow items requiring action — wire funding confirmations and payoff verifications. Recipients can act on the card directly from Outlook without logging into the web app, and their actions flow through the same business logic helpers as the in-app flows, producing consistent state changes and activity log entries across both paths.
+Every workflow event that needs to reach a user — wire batch pending, payoff awaiting verification, draw submitted for review, document expiring — flows through a unified four-layer pipeline:
 
-Cards are delivered via Microsoft Graph API from a dedicated shared mailbox. User actions POST back to TD3 API callback routes authenticated via Entra ID-signed JWT from Microsoft's Actionable Messages service. Each card includes an auto-refresh hook so stale cards sitting in an inbox update to reflect current state on open (e.g., if another user already acted).
+1. **Event source.** A Postgres trigger fires inside the same transaction that mutated the entity and writes one row to `notification_outbox`. If the outer transaction rolls back, the notification rolls back with it (transactional outbox pattern).
+2. **Subscription resolver.** A cron worker (`/api/cron/dispatch-notifications`, every minute) drains the outbox. For each event, it consults the `notification_rules` table to determine the audience: a permission group (e.g., everyone with `fund_draws`), the entity's owners (e.g., members of the builder on this loan), or specific named users.
+3. **Channel router.** For each resolved recipient, the dispatcher checks `user_notification_preferences` to decide which channels fire. Defaults are sensible (in-app + email on); users opt out per event via `/account/notifications`.
+4. **Delivery handlers.** Two channels are implemented today: in-app (upserts to the queue surfaced in the bell and homepage workqueue) and email. The email handler decides per-recipient: internal staff with an Outlook mailbox get an interactive Adaptive Card; external builders get a plain HTML email with deep-link buttons to the web app.
+
+Every send writes to `notification_deliveries`, which is the source of truth for "have we already sent this." The dispatcher checks it before invoking any handler, so duplicate emails or queue items can't happen even if the outbox row gets re-claimed after a worker crash. Audience-scoped dedup keys (`{event}:{entity}:audience={label}`) ensure cascade resolution doesn't cross audience boundaries when one user reads a notification.
 
 
 ---

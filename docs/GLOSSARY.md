@@ -6,24 +6,32 @@
 
 ## Table of Contents
 
+- [Adaptive Card](#adaptive-card)
 - [Amortization](#amortization)
+- [Audience-Scoped Dedup Key](#audience-scoped-dedup-key)
 - [Auto-Approved](#auto-approved)
 - [Builder](#builder)
+- [builder_member](#builder_member)
+- [builder_portal](#builder_portal)
 - [Budget / Budget Line](#budget--budget-line)
+- [CARD_BUILDERS](#card_builders)
 - [Confidence Score](#confidence-score)
 - [Construction Loan](#construction-loan)
 - [Cost Code](#cost-code)
 - [Disbursement](#disbursement)
+- [Dispatcher](#dispatcher)
 - [Draw Request](#draw-request)
 - [Draw Status](#draw-status)
 - [Extraction](#extraction)
 - [Fee Escalation](#fee-escalation)
 - [Funded](#funded)
+- [InternalOnly](#internalonly)
 - [IRR (Internal Rate of Return)](#irr-internal-rate-of-return)
 - [Lender](#lender)
 - [Lifecycle Stage](#lifecycle-stage)
 - [LTV (Loan-to-Value)](#ltv-loan-to-value)
 - [OTP (One-Time Password)](#otp-one-time-password)
+- [Outbox](#outbox)
 - [Payoff](#payoff)
 - [Payoff Adjustments](#payoff-adjustments)
 - [Per Diem](#per-diem)
@@ -32,10 +40,19 @@
 - [Retainage](#retainage)
 - [Row-Level Security](#row-level-security)
 - [Semantic Matching](#semantic-matching)
+- [STAFF_PERMISSIONS](#staff_permissions)
 - [Subcategory](#subcategory)
 - [Training Data](#training-data)
+- [useStaffOnlyRedirect](#usestaffonlyredirect)
 - [Vendor Association](#vendor-association)
 - [Wire Batch](#wire-batch)
+
+---
+
+### Adaptive Card
+
+Outlook-renderable interactive email card. Recipients act inline (approve a payoff, mark a wire funded, review a builder's draw) without opening TD3. One channel of the V2 notification pipeline; sent only to internal staff for events that have a `card_builder` registered.
+
 
 ---
 
@@ -44,6 +61,14 @@
 A schedule of periodic interest payments over the life of a construction loan. TD3 calculates compound interest with accrual at two trigger points: the last day of each calendar month, and the funding date of each new draw. Interest is charged on the total balance (principal plus all previously accrued interest), producing a real-time view of the loan's interest position. The amortization schedule feeds into payoff calculations, fee escalation tracking, and projection charts.
 
 > See [Architecture: Payoff Workflow](ARCHITECTURE.md#payoff-workflow) for details on financial calculations.
+
+---
+
+### Audience-Scoped Dedup Key
+
+Format `{event_code}:{entity_id}:audience={label}` used in `notification_deliveries` and `user_queue_items`. The audience suffix ensures cascade resolution (e.g. `wire.funded` clearing `wire.pending`) does not cross audience boundaries — a builder reading their queue copy doesn't clear the processor copy and vice versa. The label comes from the matched `notification_rules` row (permission code for `permission` rules; fixed label per entity type for `entity_member` rules).
+
+> See [Permissions & Notifications V2](PERMISSIONS_NOTIFICATIONS_V2.md) §9.6.
 
 ---
 
@@ -63,11 +88,31 @@ The contractor or construction company performing the work on a project. Each bu
 
 ---
 
+### builder_member
+
+A row in the `builder_members` table linking a `builder_portal` user to a builder. Many-to-many — one user can be on multiple builder teams; one builder can have multiple users. Drives the disjunctive RLS pattern that scopes builder users to their own data without a parallel app.
+
+> See [Permissions & Notifications V2](PERMISSIONS_NOTIFICATIONS_V2.md) §4.1.
+
+---
+
+### builder_portal
+
+Permission code marking a user as an external builder team member rather than TD3 staff. Always combined with at least one `builder_members` row. Builder users only see the three pages their `builder_members` rows scope them to (`/builders/[id]`, `/projects/[id]`, `/draws/[id]`) plus `/account*`; every other top-level page wraps with `useStaffOnlyRedirect`.
+
+---
+
 ### Budget / Budget Line
 
 Categorized line items that define the expected cost structure of a construction build, organized against TD3's standardized cost codes. Each budget line tracks an original amount, a current approved amount, and the amount already spent through funded draws. Once a draw has been funded against a budget line, that line is protected from deletion during re-imports.
 
 > See [Architecture](ARCHITECTURE.md#budget-intelligence) for details.
+
+---
+
+### CARD_BUILDERS
+
+Registry in `lib/adaptive-cards/index.ts` mapping `notification_events.card_builder` keys (`funding_date_card`, `payoff_verification_card`, `draw_review_card`) to async card-building functions. The V2 dispatcher's email channel looks up the builder by key, calls it with the event payload, and hands the resulting card JSON to `sendAdaptiveCardEmail`.
 
 ---
 
@@ -96,6 +141,14 @@ TD3's proprietary classification system for construction costs, inspired by the 
 ### Disbursement
 
 A release of funds from the construction loan to pay for completed work. In TD3, disbursements are tracked through draw requests and wire batches, with budget spent amounts updated atomically when funding is confirmed.
+
+---
+
+### Dispatcher
+
+[`lib/notifications/dispatcher.ts`](../lib/notifications/dispatcher.ts) plus the cron at `/api/cron/dispatch-notifications`. Drains `notification_outbox` every minute and fans events out to recipients across channels (in-app + email). Idempotent via `notification_deliveries` source-of-truth check before any handler call. Replaces the deleted `lib/notifications.ts` direct-dispatch orchestrator.
+
+> See [Permissions & Notifications V2](PERMISSIONS_NOTIFICATIONS_V2.md) §9.
 
 ---
 
@@ -139,6 +192,12 @@ The final status of a draw request or wire batch, indicating that funds have bee
 
 ---
 
+### InternalOnly
+
+`<InternalOnly>` component in [`app/components/auth/InternalOnly.tsx`](../app/components/auth/InternalOnly.tsx). Sugar over `<PermissionGate>` with `STAFF_PERMISSIONS`. The canonical wrapper for any internal data (IRR, lender financials, processor notes, AI confidence scores, performance comparisons) that appears on shared pages where builder users land.
+
+---
+
 ### IRR (Internal Rate of Return)
 
 The annualized effective rate of return on a construction loan, accounting for the timing and amounts of all cash flows. TD3 calculates IRR using the Newton-Raphson iterative method on the loan's actual disbursement schedule and payment history, providing an accurate measure of realized yield.
@@ -172,6 +231,14 @@ The ratio of the loan amount to the appraised property value, expressed as a per
 An 8-digit numeric code sent via email for passwordless authentication. Each code expires after a short window and can only be used once. TD3 uses OTP codes rather than email links because numeric codes are immune to the link-scanning behavior of enterprise email security systems that can inadvertently consume magic links before the user clicks them.
 
 > See [Security](SECURITY.md#authentication-who-can-sign-in) for details.
+
+---
+
+### Outbox
+
+`notification_outbox` table. SQL triggers write rows here inside the same transaction that mutates the entity (transactional outbox pattern), so notifications survive transaction rollback — if the entity write rolls back, so does the outbox row, and no phantom notification ever fires. The dispatcher drains the outbox in batches via `claim_outbox_batch` (`FOR UPDATE SKIP LOCKED`).
+
+> See [Permissions & Notifications V2](PERMISSIONS_NOTIFICATIONS_V2.md) §4.5.
 
 ---
 
@@ -237,6 +304,12 @@ AI-powered invoice-to-budget matching that uses contextual understanding of cons
 
 ---
 
+### STAFF_PERMISSIONS
+
+Canonical TD3 staff permission set: `['processor', 'fund_draws', 'approve_payoffs', 'users.manage']`. Exported from [`lib/supabase.ts`](../lib/supabase.ts) and consumed by `<InternalOnly>`, `useStaffOnlyRedirect`, and the navigation manifest. Single source of truth for "is this user staff?" — adding or removing staff codes is a one-line edit that propagates to every gating surface.
+
+---
+
 ### Subcategory
 
 One of 89 specific cost classifications within TD3's cost code system. Each subcategory falls under one of 12 parent categories and represents a distinct type of construction work (e.g., "Rough Plumbing" under the Plumbing parent category, or "Insulation" under Insulation/Drywall/Paint). Subcategories may be flagged as fundable (eligible for draw funding) or auto-matchable (suitable for AI-assisted matching).
@@ -250,6 +323,12 @@ One of 89 specific cost classifications within TD3's cost code system. Each subc
 Structured records captured from every funded draw that feed into TD3's self-improving AI system. Training data includes vendor-to-category associations, AI-versus-human decision comparisons, confidence calibration data, amount patterns, and match method records. This data forms the foundation for future improvements including vendor history context in AI prompts, confidence recalibration, and correction-driven learning.
 
 > See [Artificial Intelligence](ARTIFICIAL_INTELLIGENCE.md#training-data-and-the-path-to-self-improvement) for details.
+
+---
+
+### useStaffOnlyRedirect
+
+Hook in [`app/components/auth/PermissionGate.tsx`](../app/components/auth/PermissionGate.tsx). The reverse of `usePermissionRedirect` — bounces builder portal users (those holding `builder_portal` and no `STAFF_PERMISSIONS`) away from staff-only pages back to their builder home. Apply to every staff-only top-level page so URL-guessing builders can't reach internal surfaces. Returns `{ checking, allowed }` to handle the `permissionsLoaded` race the same way `usePermissionRedirect` does.
 
 ---
 

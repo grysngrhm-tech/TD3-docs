@@ -75,10 +75,11 @@ Interactive email notifications for workflow items that require action. Recipien
 **Shipped cards:**
 - **Funding Date Card** — sent to users with `fund_draws` permission when a wire batch is submitted. Bookkeeper inputs funded date and wire reference directly in Outlook.
 - **Payoff Verification Card** — sent to users with `approve_payoffs` permission when a payoff is approved. Verifier approves or rejects (with reason) from Outlook.
+- **Draw Review Card** — sent to users with `processor` permission when a builder submits a draw for review. Processor approves, requests revisions (with note), or rejects (with reason) from Outlook.
 
-Both cards auto-refresh when opened, so recipients always see current state even if another user already acted.
+All three cards auto-refresh when opened, so recipients always see current state even if another user already acted.
 
-**How it works:** Cards are sent via Microsoft Graph from a dedicated shared mailbox. User actions route back to TD3 API callbacks authenticated via Entra ID-signed JWT from Microsoft's Actionable Messages service. An auto-refresh hook ensures stale cards update to current state when re-opened, so a recipient seeing a card five days later sees the latest status rather than the stale snapshot.
+**How it works:** Cards are sent via Microsoft Graph from a dedicated shared mailbox. User actions route back to TD3 API callbacks authenticated via Entra ID-signed JWT from Microsoft's Actionable Messages service. An auto-refresh hook ensures stale cards update to current state when re-opened, so a recipient seeing a card five days later sees the latest status rather than the stale snapshot. Cards are now one channel of the unified V2 notification pipeline (see [PERMISSIONS_NOTIFICATIONS_V2.md](PERMISSIONS_NOTIFICATIONS_V2.md)) — the same trigger that creates an in-app notification renders the card for users with an Outlook mailbox.
 
 **Future: Microsoft Teams delivery.** The current implementation is Outlook-only via email. Teams delivery would require an Azure Bot Service subscription. On the roadmap if adoption grows but not a priority for launch.
 
@@ -104,29 +105,27 @@ Most actions don't require navigating away from the homepage. Typing in search p
 
 **Header notifications bell.** The bell in the top chrome shares the same queue data. On the homepage, clicking a bell row pins the entity into the polymorphic header without navigating — it's a zero-friction way to jump into context for something you're about to act on. Off the homepage, the bell navigates as before. The unread count stays in sync between bell and homepage queue via a cross-surface event bus, so reading in one drops the badge in the other without a round-trip.
 
-### Builder & Lender Portals
+### Builder Portal — ✅ Shipped April 2026
 
-**Why self-service matters:** Builders and lenders currently rely on phone calls, emails, and manual report generation to get updates on their loans. Every "what's the status of my draw?" inquiry requires a processor to look up the information and relay it---a pattern that scales linearly with portfolio size. Self-service portals eliminate this overhead by giving external stakeholders real-time visibility into their own data, reducing support requests and freeing the internal team to focus on processing work.
+**Why self-service matters:** Builders currently rely on phone calls, emails, and manual report generation to get updates on their loans. Every "what's the status of my draw?" inquiry requires a processor to look up the information and relay it---a pattern that scales linearly with portfolio size. The builder portal eliminates this overhead by giving builder teams real-time visibility into their own data, reducing support requests and freeing the internal team to focus on processing work.
 
-Provide external stakeholders with secure, limited-access views into their relevant data. Both portals build on TD3's existing [security model](SECURITY.md#permissions-what-each-user-can-do) and [role-based UI adaptations](DESIGN_LANGUAGE.md#75-role-based-adaptations-future).
-
-**Builder Portal:**
-- View their own loans and current balances
+**What builders can do:**
+- View their own loans, balances, and draw history
 - Review approved budgets by category with remaining amounts
-- Submit draw requests and upload invoices directly
-- Track draw status through the funding pipeline in real time
+- Create draft draws, attach invoices, and submit for processor review
+- Receive real-time notifications when their draws are approved, sent back for revisions, rejected, or funded
 - Download funded draw confirmations and wire details
+- Manage notification preferences per event category (in-app vs email)
 
-**Lender Portal:**
-- Read-only portfolio view filtered to their funded loans
-- Loan summaries with current balances, draw progress, and LTV metrics
-- Aggregate portfolio statistics and performance metrics
-- Exportable reports for internal lending reviews and regulatory compliance
-- Historical trend views showing portfolio health over time
+**Architecture:** Rather than building a parallel app, the builder portal reuses TD3's existing builder, project, and draw pages — gated by a new `builder_portal` permission and scoped by a `builder_members` table. Row-level security enforces data isolation: a builder sees only loans tied to a builder they're a member of. Pages outside their scope (`/portfolio`, `/staging`, `/admin/*`) bounce them back to their builder home via a permission redirect. Internal-only fields on shared pages (IRR, lender financials, processor notes, AI confidence scores) are wrapped in an `<InternalOnly>` component that hides them from non-staff viewers. One codebase, no duplication.
 
-**Portal authentication model:** Both portals use a separate login flow distinct from the internal TD3 interface. External users authenticate via email OTP (the same scanner-safe code verification used internally) but receive scoped access tokens that restrict database queries to their own records via row-level security. A builder sees only their own loans; a lender sees only loans they fund. The internal permission system (`processor`, `fund_draws`, etc.) does not apply to portal users---their access is governed entirely by data ownership.
+**Builder-submitted draw lifecycle:** Builder drafts go through a review state (`submitted_for_review`) before flowing into the existing wire batch pipeline. Processors see the new draw in their queue + as an Outlook Adaptive Card with Approve / Request Changes / Reject actions. Builders see status updates and any revision notes back in the same draw page they created.
 
-**Design adaptation per role:** Each portal presents a simplified interface tailored to the stakeholder's needs. Builders see a construction-focused view emphasizing budget progress and draw submission. Lenders see a finance-focused view emphasizing balances, risk metrics, and portfolio performance. Both share the same underlying data model and design language, adapted for audience.
+For the full design — schema, RLS pattern, state machine, edge cases, and migration sequencing — see [PERMISSIONS_NOTIFICATIONS_V2.md](PERMISSIONS_NOTIFICATIONS_V2.md).
+
+### Lender Portal
+
+**Lender Portal:** Same architectural pattern as the builder portal once built — a `lender_portal` permission and `lender_members` scoping table on top of the existing `/lenders/[id]` and `/projects/[id]` pages, with a different `<InternalOnly>` boundary tuned for the lender audience. Read-only portfolio views filtered to their funded loans, loan summaries with current balances and LTV metrics, aggregate portfolio statistics, and exportable reports for internal lending reviews. Not yet scheduled.
 
 ### Mobile Inspection App
 
@@ -237,7 +236,7 @@ gantt
     Microsoft Adaptive Cards       :done, cards, 2026-04-15, 3d
 
     section Portals
-    Builder Portal                 :builder, 2026-07-01, 28d
+    Builder Portal                 :done, builder, 2026-04-23, 1d
     Lender Portal                  :lender, 2026-08-01, 28d
 
     section Mobile
