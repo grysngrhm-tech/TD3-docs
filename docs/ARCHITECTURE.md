@@ -298,18 +298,20 @@ The unified log replaces an earlier two-table design (`audit_events` + `user_act
 
 ### Notification Pipeline
 
-Every workflow event that needs to reach a user — wire batch pending, payoff awaiting verification, draw submitted for review, document expiring — flows through a unified four-layer pipeline:
+Every workflow event that needs to reach a user — wire batch pending, payoff awaiting verification, draw submitted for review, document expiring, loan maturity approaching — flows through a unified four-layer pipeline:
 
 1. **Event source.** A Postgres trigger fires inside the same transaction that mutated the entity and writes one row to `notification_outbox`. If the outer transaction rolls back, the notification rolls back with it (transactional outbox pattern).
-2. **Subscription resolver.** A cron worker (`/api/cron/dispatch-notifications`, every minute) drains the outbox. For each event, it consults the `notification_rules` table to determine the audience: a permission group (e.g., everyone with `fund_draws`), the entity's owners (e.g., members of the builder on this loan), or specific named users.
-3. **Channel router.** For each resolved recipient, the dispatcher checks `user_notification_preferences` to decide which channels fire. Defaults are sensible (in-app + email on); users opt out per event via `/account/notifications`.
+2. **Subscription resolver.** A cron worker (`/api/cron/dispatch-notifications`, every minute) drains the outbox. For each event, it consults the `notification_rules` table to determine the audience: a permission group (e.g., everyone with `fund_draws`), the entity's owners (e.g., members of the builder on this loan), specific named users, or **the user the event is about** (account.* events use `audience_type='user'` with NULL audience_value, resolved from the event's entity_id).
+3. **Channel router.** For each resolved recipient, the dispatcher checks `user_notification_preferences` to decide which channels fire. Defaults are sensible (in-app + email on); users opt out per event via `/account?tab=notifications`.
 4. **Delivery handlers.** Two channels are implemented today: in-app (upserts to the queue surfaced in the bell and homepage workqueue) and email. The email handler decides per-recipient: internal staff with an Outlook mailbox get an interactive Adaptive Card; external builders get a plain HTML email with deep-link buttons to the web app.
 
 Every send writes to `notification_deliveries`, which is the source of truth for "have we already sent this." The dispatcher checks it before invoking any handler, so duplicate emails or queue items can't happen even if the outbox row gets re-claimed after a worker crash. Audience-scoped dedup keys (`{event}:{entity}:audience={label}`) ensure cascade resolution doesn't cross audience boundaries when one user reads a notification.
 
+**The catalog (25 events, 8 categories).** Triggered events (`draw.*`, `wire.*`, `payoff.*`, `loan.activated`) emit synchronously from SQL triggers when entity state changes. Time-based events (`reminder.*`, `document.expiring*`/`expired`, `loan.maturity_30d`/`payoff_overdue`) are emitted by a separate detection cron `/api/cron/emit-reminders` (every 30 min) that scans for stale states and inserts outbox rows; cross-tick dedup lives in `notification_reminder_state(event_code, entity_id, last_fired_at)`. Account-scoped events (`account.permission_granted`/`revoked`, `account.builder_team_changed`) fire from triggers on `user_permissions` and `builder_members` and use the self-targeted resolver path described above.
+
 **Two notification shapes.** Each event in `notification_events` carries an `email_required` flag that splits the catalog into two classes:
 
-- **Action notifications** — the email IS the action surface. Inline buttons in the rendered Adaptive Card let recipients act (mark a wire funded, verify or reject a payoff) without opening TD3. The email channel is required: the channel router force-enables it server-side regardless of user preference, and the `/account/notifications` UI mirrors the override by rendering the email checkbox disabled. Suppressing email on these events would strand the action behind a TD3 login the user may not check in time.
+- **Action notifications** — the email IS the action surface. Inline buttons in the rendered Adaptive Card let recipients act (mark a wire funded, verify or reject a payoff) without opening TD3. The email channel is required: the channel router force-enables it server-side regardless of user preference. **Required emails also bypass digest mode and quiet hours** (see below) — workflow-blocking actions cannot be silenced or batched. The `/account?tab=notifications` UI mirrors the override by rendering the email checkbox disabled.
 - **Informational notifications** — status updates the user can act on later in TD3 if desired. The email channel is optional and toggleable per-user; the `in_app` channel is always available via the bell + workqueue.
 
 Five Adaptive Card variants ship today, registered in [`lib/adaptive-cards/index.ts`](../lib/adaptive-cards/index.ts):
@@ -323,6 +325,16 @@ Five Adaptive Card variants ship today, registered in [`lib/adaptive-cards/index
 | Payoff Completed | `payoff.completed` | Informational |
 
 Adaptive Cards are one channel of this unified pipeline, not a parallel system. The same trigger that creates an in-app queue item also feeds the email/card render. The email channel handler ([`lib/notifications/channels/email.ts`](../lib/notifications/channels/email.ts)) renders an Adaptive Card only when the recipient is internal staff (matched via a `permission` rule and holding an `@tennantdevelopments.com` mailbox). Builder recipients (matched via `entity_member`) always receive the rich fallback HTML — designed as a first-class deliverable, since most builders use Gmail or Outlook.com which don't render Adaptive Cards.
+
+**Digest mode and quiet hours.** For non-required events, the email channel routes through one of three paths before sending:
+
+1. **Quiet hours active** (`profiles.quiet_hours_*`, Pacific Time, DST-aware) → render the body and buffer into `notification_email_digest` with cadence `quiet_hours_resume`. Buffer + flush, not drop.
+2. **Digest mode set** (`user_notification_preferences.email_digest_mode='daily'|'weekly'`) → buffer with the chosen cadence.
+3. **Otherwise** → send immediately.
+
+A second cron `/api/cron/digest` (every hour at `:05`) flushes the buffer table. Daily rows flush at 8am Pacific; weekly rows at Monday 8am Pacific; quiet-hours-resume rows flush at the next hourly tick where the recipient is back outside their quiet window. Each user gets ONE combined email per cadence with all their buffered events stacked. Failed sends (`sendHtmlEmail` returns `success=false`) skip the flush update and are retried on the next tick. Buffer write failures fail-closed — the channel returns `status='failed'` so the dispatcher retries, never quietly falling through to a realtime send.
+
+**Audience polymorphism.** `notification_events.audience_descriptions` JSONB carries per-audience event copy. The in-app channel uses [`lib/notifications/polymorphism.ts::resolveAudienceCopy`](../lib/notifications/polymorphism.ts) to render audience-specific queue subjects ("you approved this draw" to processors vs. "your draw was approved" to builders). Six dual-perspective events are curated; the rest fall back to the flat `description` column.
 
 
 ---
@@ -350,4 +362,4 @@ Adaptive Cards are one channel of this unified pipeline, not a parallel system. 
 
 ---
 
-*TD3 Technical Architecture -- © 2024-2026 TD3, built by Grayson Graham -- Last updated: February 2026*
+*TD3 Technical Architecture -- © 2024-2026 TD3, built by Grayson Graham -- Last updated: May 2026*
